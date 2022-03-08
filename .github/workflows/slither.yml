@@ -1,8 +1,28 @@
 name: Slither Analysis
 on: [push]
+defaults:
+  run:
+    shell: bash -ieo pipefail {0}
 jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: crytic/slither-action@v0.1.0
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+      with:
+          submodules: recursive
+    - name: Install Foundry
+      run:
+        curl -L https://foundry.paradigm.xyz | bash
+    - name: Install Rust
+      run: |
+       curl https://sh.rustup.rs -sSf -o rust-install.sh
+       sh rust-install.sh -y
+    - name: Run Build
+      run: |
+        foundryup
+        forge build
+    - name: Run Tests
+      run:
+        forge test
+
