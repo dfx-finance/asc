@@ -12,13 +12,22 @@ contract Logic is State {
     constructor(
         string memory _name,
         string memory _symbol,
-        address _admin
+        address _admin,
+        address _feeRecipient,
+        address[] memory _underlying,
+        uint256[] memory _backingRatio,
+        int256[] memory _pokeDelta
     ) {
         __ERC20_init(_name, _symbol);
 
         _setRoleAdmin(SUDO_ROLE, SUDO_ROLE_ADMIN);
         _setupRole(SUDO_ROLE_ADMIN, _admin);
         _setupRole(SUDO_ROLE, _admin);
+
+        underlying = _underlying;
+        backingRatio = _backingRatio;
+        pokeDelta = _pokeDelta;
+        feeRecipient = _feeRecipient;
     }
 
     // **** Modifiers ****
@@ -60,6 +69,11 @@ contract Logic is State {
         }
     }
 
+    /// @notice Fee recipient from mint/burn
+    function setFeeRecipient(address _recipient) public onlyRole(SUDO_ROLE) {
+        feeRecipient = _recipient;
+    }
+
     // **** Public functions ****
 
     /// @notice Mints the ASC token
@@ -77,19 +91,35 @@ contract Logic is State {
             );
         }
 
-        _mint(msg.sender, _amount);
+        // No fee for fee recipient
+        if (msg.sender == feeRecipient) {
+            _mint(msg.sender, _amount);
+        } else {
+            uint256 _fee = (_amount * MINT_BURN_FEE) / 1e18;
+            _mint(msg.sender, _amount - _fee);
+            _mint(feeRecipient, _fee);
+        }
     }
 
     /// @notice Burns the ASC token
-    /// @param _amount Amount of ASC token to burn 
+    /// @param _amount Amount of ASC token to burn
     function burn(uint256 _amount) public {
         require(_amount > 0, "non-zero only");
+
+        if (msg.sender == feeRecipient) {
+            _burn(msg.sender, _amount);
+        } else {
+            uint256 _fee = (_amount * MINT_BURN_FEE) / 1e18;
+            _burn(msg.sender, _amount);
+            _mint(feeRecipient, _fee);
+            _amount = _amount - _fee;
+        }
+
         uint256[] memory _amounts = getMintUnderlyings(_amount);
-
-        _burn(msg.sender, _amount);
-
         for (uint256 i = 0; i < underlying.length; i++) {
-            IERC20(underlying[i]).safeTransfer(msg.sender, _amounts[i]);
+            if (msg.sender == feeRecipient) {
+                IERC20(underlying[i]).safeTransfer(msg.sender, _amounts[i]);
+            } else {}
         }
     }
 

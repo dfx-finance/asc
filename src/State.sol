@@ -11,6 +11,8 @@ contract State is ERC20Upgradeable, AccessControlUpgradeable {
     bytes32 constant public SUDO_ROLE = keccak256("asc.role.sudo");
     bytes32 constant public SUDO_ROLE_ADMIN = keccak256("asc.role.sudo.admin");
 
+    uint256 constant public MINT_BURN_FEE = 5e15;
+
     /***** Variables *****/
 
     /* !!!! Important !!!! */
@@ -26,4 +28,7 @@ contract State is ERC20Upgradeable, AccessControlUpgradeable {
     // How much delta will each 'poke' consist of
     // Manually set for now
     int256[] public pokeDelta;
+
+    // Fee recipient
+    address public feeRecipient;
 }
