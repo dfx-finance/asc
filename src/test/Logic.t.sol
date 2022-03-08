@@ -29,7 +29,7 @@ contract LogicTest is DSTest {
 
     // MINT BURN FEE
     // 0.5%
-    uint256 constant internal MINT_BURN_FEE = 5e15;
+    uint256 internal constant MINT_BURN_FEE = 5e15;
 
     function setUp() public {
         stablecoin = new MockToken();
@@ -172,8 +172,8 @@ contract LogicTest is DSTest {
         // How much do we get burning 10 tokens?
         // Multiply by 0.995 to get actual output
         uint256[] memory amounts = proxy.getMintUnderlyings(10e18);
-        amounts[0] = amounts[0] * 995 / 1000;
-        amounts[1] = amounts[1] * 995 / 1000;
+        amounts[0] = (amounts[0] * 995) / 1000;
+        amounts[1] = (amounts[1] * 995) / 1000;
 
         // Burn
         proxy.burn(10e18);
@@ -285,5 +285,34 @@ contract LogicTest is DSTest {
         // Need to wait POKE_WAIT_PERIOD between each poke
         test_poke_down();
         test_poke_down();
+    }
+
+    function testFail_pause() public {
+        // Minting cannot happen after pause
+        test_mint_fee();
+
+        sudo.call(
+            address(proxy),
+            abi.encodeWithSelector(proxy.setPaused.selector, true)
+        );
+        test_mint_fee();
+    }
+
+    function test_unpause() public {
+        // Contract can be unpaused
+        sudo.call(
+            address(proxy),
+            abi.encodeWithSelector(proxy.setPaused.selector, true)
+        );
+
+        cheats.expectRevert("Pausable: paused");
+        proxy.mint(100e18);
+
+        // unpause and try again
+        sudo.call(
+            address(proxy),
+            abi.encodeWithSelector(proxy.setPaused.selector, false)
+        );
+        test_mint_fee();
     }
 }
