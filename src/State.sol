@@ -23,9 +23,6 @@ contract State is
     bytes32 public constant MARKET_MAKER_ROLE_ADMIN =
         keccak256("asc.role.mm.admin");
 
-    // 0.5% fee, for now
-    uint256 public constant MINT_BURN_FEE = 5e15;
-
     // Can only poke the contracts every 6 hours
     uint256 public constant POKE_WAIT_PERIOD = 6 hours;
 
@@ -49,8 +46,9 @@ contract State is
     // and increase reliability on the volatile asset gradually
     int256[] public pokeDelta;
 
-    // Fee recipient
+    // Fee recipient and mint/burn fee, starts off at 0.5%
     address public feeRecipient;
+    uint256 public mintBurnFee;
 
     // Last poke time
     uint256 public lastPokeTime;

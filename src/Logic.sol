@@ -18,6 +18,7 @@ contract Logic is State {
         string memory _symbol,
         address _admin,
         address _feeRecipient,
+        uint256 _mintBurnFee,
         address[] memory _underlying,
         uint256[] memory _underlyingPerToken,
         int256[] memory _pokeDelta
@@ -36,10 +37,14 @@ contract Logic is State {
         underlyingPerToken = _underlyingPerToken;
         pokeDelta = _pokeDelta;
         feeRecipient = _feeRecipient;
+        mintBurnFee = _mintBurnFee;
 
         // Sanity checks, no SLOAD woot
         // We gas golfing here
-        require(_underlying.length == _underlyingPerToken.length, "invalid-underlyings");
+        require(
+            _underlying.length == _underlyingPerToken.length,
+            "invalid-underlyings"
+        );
 
         int256 k = 0;
         for (uint256 j = 0; j < _pokeDelta.length; j++) {
@@ -87,13 +92,11 @@ contract Logic is State {
     ///         If set correctly, the underlying backing of the stable
     ///         assets will decrease and the underlying backing of the volatile
     ///         assets will increase.
-    function pokeUp()
-        public
-        onlyRole(SUDO_ROLE)
-        updatePokeTime
-    {
+    function pokeUp() public onlyRole(SUDO_ROLE) updatePokeTime {
         for (uint256 i = 0; i < underlyingPerToken.length; i++) {
-            underlyingPerToken[i] = uint256(int256(underlyingPerToken[i]) + pokeDelta[i]);
+            underlyingPerToken[i] = uint256(
+                int256(underlyingPerToken[i]) + pokeDelta[i]
+            );
         }
     }
 
@@ -101,13 +104,11 @@ contract Logic is State {
     ///         If set correctly, the underlying backing of the stable
     ///         assets will increase and the underlying backing of the volatile
     ///         assets will decrease
-    function pokeDown()
-        public
-        onlyRole(SUDO_ROLE)
-        updatePokeTime
-    {
+    function pokeDown() public onlyRole(SUDO_ROLE) updatePokeTime {
         for (uint256 i = 0; i < underlyingPerToken.length; i++) {
-            underlyingPerToken[i] = uint256(int256(underlyingPerToken[i]) - pokeDelta[i]);
+            underlyingPerToken[i] = uint256(
+                int256(underlyingPerToken[i]) - pokeDelta[i]
+            );
         }
     }
 
@@ -122,6 +123,12 @@ contract Logic is State {
             msg.sender,
             IERC20(_a).balanceOf(address(this))
         );
+    }
+
+    /// @notice Sets mint/burn fee
+    function setMintBurnFee(uint256 _f) public onlyRole(SUDO_ROLE) {
+        require(_f < 1e18, "invalid-fee");
+        mintBurnFee = _f;
     }
 
     /// @notice Emergency trigger
@@ -154,7 +161,7 @@ contract Logic is State {
         if (hasRole(MARKET_MAKER_ROLE, msg.sender)) {
             _mint(msg.sender, _amount);
         } else {
-            uint256 _fee = (_amount * MINT_BURN_FEE) / 1e18;
+            uint256 _fee = (_amount * mintBurnFee) / 1e18;
             _mint(msg.sender, _amount - _fee);
             _mint(feeRecipient, _fee);
         }
@@ -169,7 +176,7 @@ contract Logic is State {
         if (hasRole(MARKET_MAKER_ROLE, msg.sender)) {
             _burn(msg.sender, _amount);
         } else {
-            uint256 _fee = (_amount * MINT_BURN_FEE) / 1e18;
+            uint256 _fee = (_amount * mintBurnFee) / 1e18;
             _burn(msg.sender, _amount);
             _mint(feeRecipient, _fee);
             _amount = _amount - _fee;
@@ -177,9 +184,7 @@ contract Logic is State {
 
         uint256[] memory _amounts = getMintUnderlyings(_amount);
         for (uint256 i = 0; i < underlying.length; i++) {
-            if (msg.sender == feeRecipient) {
-                IERC20(underlying[i]).safeTransfer(msg.sender, _amounts[i]);
-            } else {}
+            IERC20(underlying[i]).safeTransfer(msg.sender, _amounts[i]);
         }
     }
 
@@ -193,7 +198,7 @@ contract Logic is State {
         uint256[] memory _amounts = new uint256[](underlying.length);
 
         for (uint256 i = 0; i < underlying.length; i++) {
-            _amounts[i] = _mintAmount * underlyingPerToken[i] / 1e18;
+            _amounts[i] = (_mintAmount * underlyingPerToken[i]) / 1e18;
         }
 
         return _amounts;

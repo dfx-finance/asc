@@ -27,6 +27,10 @@ contract LogicTest is DSTest {
     // Cheatcodes
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
 
+    // MINT BURN FEE
+    // 0.5%
+    uint256 constant internal MINT_BURN_FEE = 5e15;
+
     function setUp() public {
         stablecoin = new MockToken();
         volatileToken = new MockToken();
@@ -54,6 +58,7 @@ contract LogicTest is DSTest {
             "COIN",
             address(sudo),
             address(feeCollector),
+            MINT_BURN_FEE,
             underlying,
             backingRatio,
             pokeDelta
@@ -93,6 +98,7 @@ contract LogicTest is DSTest {
                 logic.initialize.selector,
                 "Coin",
                 "COIN",
+                MINT_BURN_FEE, // 0.5% mint burn
                 address(sudo),
                 address(feeCollector),
                 underlying,
@@ -156,6 +162,26 @@ contract LogicTest is DSTest {
         assertEq(proxy.balanceOf(address(this)), 995e17);
     }
 
+    function test_burn_fee() public {
+        // Have 99.5 tokens
+        test_mint_fee();
+
+        assertEq(stablecoin.balanceOf(address(this)), 0);
+        assertEq(volatileToken.balanceOf(address(this)), 0);
+
+        // How much do we get burning 10 tokens?
+        // Multiply by 0.995 to get actual output
+        uint256[] memory amounts = proxy.getMintUnderlyings(10e18);
+        amounts[0] = amounts[0] * 995 / 1000;
+        amounts[1] = amounts[1] * 995 / 1000;
+
+        // Burn
+        proxy.burn(10e18);
+
+        assertEq(stablecoin.balanceOf(address(this)), amounts[0]);
+        assertEq(volatileToken.balanceOf(address(this)), amounts[1]);
+    }
+
     function test_mint_no_fee() public {
         assertEq(proxy.balanceOf(address(this)), 0);
 
@@ -181,6 +207,20 @@ contract LogicTest is DSTest {
 
         // No fee
         assertEq(proxy.balanceOf(address(this)), 100e18);
+    }
+
+    function test_burn_no_fee() public {
+        test_mint_no_fee();
+
+        assertEq(stablecoin.balanceOf(address(this)), 0);
+        assertEq(volatileToken.balanceOf(address(this)), 0);
+
+        uint256[] memory amounts = proxy.getMintUnderlyings(10e18);
+
+        proxy.burn(10e18);
+
+        assertEq(stablecoin.balanceOf(address(this)), amounts[0]);
+        assertEq(volatileToken.balanceOf(address(this)), amounts[1]);
     }
 
     function test_poke_up_underlyings() public {
