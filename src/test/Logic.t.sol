@@ -4,6 +4,7 @@ pragma solidity 0.8.10;
 import "ds-test/test.sol";
 import "./lib/MockToken.sol";
 import "./lib/MockUser.sol";
+import "./lib/CheatCodes.sol";
 
 import "../Logic.sol";
 import "../UpgradableProxy.sol";
@@ -18,14 +19,20 @@ contract LogicTest is DSTest {
     MockToken stablecoin;
     MockToken volatileToken;
 
+    // Mock users so we can have many addresses
     MockUser admin;
+    MockUser sudo;
     MockUser feeCollector;
+
+    // Cheatcodes
+    CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
 
     function setUp() public {
         stablecoin = new MockToken();
         volatileToken = new MockToken();
 
         admin = new MockUser();
+        sudo = new MockUser();
         feeCollector = new MockUser();
 
         address[] memory underlying = new address[](2);
@@ -33,8 +40,8 @@ contract LogicTest is DSTest {
         underlying[1] = address(volatileToken);
 
         uint256[] memory backingRatio = new uint256[](2);
-        backingRatio[0] = 5e17;
-        backingRatio[1] = 5e17;
+        backingRatio[0] = 99e16;
+        backingRatio[1] = 1e16;
 
         int256[] memory pokeDelta = new int256[](2);
         pokeDelta[0] = -1e16;
@@ -45,7 +52,7 @@ contract LogicTest is DSTest {
             Logic.initialize.selector,
             "Coin",
             "COIN",
-            address(admin),
+            address(sudo),
             address(feeCollector),
             underlying,
             backingRatio,
@@ -59,10 +66,159 @@ contract LogicTest is DSTest {
         );
 
         proxy = Logic(address(upgradeableProxy));
+
+        // If block.timestamp is 0 just set it to sometime in 2022
+        if (block.timestamp == 0) {
+            cheats.warp(1646765810);
+        }
+    }
+
+    // Should only be able to initialize once
+    function testFail_reinitialize() public {
+        address[] memory underlying = new address[](2);
+        underlying[0] = address(stablecoin);
+        underlying[1] = address(volatileToken);
+
+        uint256[] memory backingRatio = new uint256[](2);
+        backingRatio[0] = 99e16;
+        backingRatio[1] = 1e16;
+
+        int256[] memory pokeDelta = new int256[](2);
+        pokeDelta[0] = -1e16;
+        pokeDelta[1] = 1e16;
+
+        admin.call(
+            address(proxy),
+            abi.encodeWithSelector(
+                logic.initialize.selector,
+                "Coin",
+                "COIN",
+                address(sudo),
+                address(feeCollector),
+                underlying,
+                backingRatio,
+                pokeDelta
+            )
+        );
     }
 
     function test_proxy_erc20() public {
         assertEq(proxy.name(), "Coin");
         assertEq(proxy.symbol(), "COIN");
+        assertEq(proxy.totalSupply(), 0);
+
+        assertEq(upgradeableProxy.getAdmin(), address(admin));
+        assertTrue(proxy.hasRole(proxy.SUDO_ROLE(), address(sudo)));
+        assertTrue(proxy.hasRole(proxy.MARKET_MAKER_ROLE(), address(sudo)));
+    }
+
+    function test_access_control() public {
+        MockUser newUser = new MockUser();
+
+        assertTrue(!proxy.hasRole(proxy.MARKET_MAKER_ROLE(), address(newUser)));
+        sudo.call(
+            address(proxy),
+            abi.encodeWithSelector(
+                proxy.grantRole.selector,
+                proxy.MARKET_MAKER_ROLE(),
+                address(newUser)
+            )
+        );
+        assertTrue(proxy.hasRole(proxy.MARKET_MAKER_ROLE(), address(newUser)));
+
+        assertTrue(!proxy.hasRole(proxy.SUDO_ROLE(), address(newUser)));
+        sudo.call(
+            address(proxy),
+            abi.encodeWithSelector(
+                proxy.grantRole.selector,
+                proxy.SUDO_ROLE(),
+                address(newUser)
+            )
+        );
+        assertTrue(proxy.hasRole(proxy.SUDO_ROLE(), address(newUser)));
+    }
+
+    function test_mint_fee() public {
+        assertEq(proxy.balanceOf(address(this)), 0);
+
+        stablecoin.mint(address(this), 99e18);
+        volatileToken.mint(address(this), 1e18);
+
+        stablecoin.approve(address(proxy), type(uint256).max);
+        volatileToken.approve(address(proxy), type(uint256).max);
+
+        proxy.mint(100e18);
+
+        assertEq(stablecoin.balanceOf(address(this)), 0);
+        assertEq(volatileToken.balanceOf(address(this)), 0);
+
+        // 0.5% fee
+        assertEq(proxy.balanceOf(address(this)), 995e17);
+    }
+
+    function test_mint_no_fee() public {
+        assertEq(proxy.balanceOf(address(this)), 0);
+
+        stablecoin.mint(address(this), 99e18);
+        volatileToken.mint(address(this), 1e18);
+
+        stablecoin.approve(address(proxy), type(uint256).max);
+        volatileToken.approve(address(proxy), type(uint256).max);
+
+        sudo.call(
+            address(proxy),
+            abi.encodeWithSelector(
+                proxy.grantRole.selector,
+                proxy.MARKET_MAKER_ROLE(),
+                address(this)
+            )
+        );
+
+        proxy.mint(100e18);
+
+        assertEq(stablecoin.balanceOf(address(this)), 0);
+        assertEq(volatileToken.balanceOf(address(this)), 0);
+
+        // No fee
+        assertEq(proxy.balanceOf(address(this)), 100e18);
+    }
+
+    function test_poke_up_underlyings() public {
+        uint256[] memory amounts0 = proxy.getMintUnderlyings(1e18);
+        test_poke_up();
+        uint256[] memory amounts1 = proxy.getMintUnderlyings(1e18);
+
+        // 0 is stable
+        // 1 is volatile
+
+        // Poke up = less dependent on stablecoins
+        assertLt(amounts1[0], amounts0[0]);
+        assertGt(amounts1[1], amounts0[1]);
+    }
+
+    function test_poke_up() public {
+        sudo.call(
+            address(proxy),
+            abi.encodeWithSelector(proxy.pokeUp.selector)
+        );
+    }
+
+    function test_poke_down() public {
+        sudo.call(
+            address(proxy),
+            abi.encodeWithSelector(proxy.pokeDown.selector)
+        );
+    }
+
+    function test_poke_up_2() public {
+        test_poke_up();
+        cheats.warp(block.timestamp + proxy.POKE_WAIT_PERIOD() + 60);
+        test_poke_up();
+    }
+
+    function testFail_poke_up() public {
+        // Need to wait POKE_WAIT_PERIOD between each poke
+        test_poke_up();
+        test_poke_up();
     }
 }

@@ -9,6 +9,8 @@ import "./State.sol";
 contract Logic is State {
     using SafeERC20 for IERC20;
 
+    // **** Initializing functions ****
+
     // We don't need to check twice if the contract's initialized as
     // __ERC20_init does that check
     function initialize(
@@ -17,7 +19,7 @@ contract Logic is State {
         address _admin,
         address _feeRecipient,
         address[] memory _underlying,
-        uint256[] memory _backingRatio,
+        uint256[] memory _underlyingPerToken,
         int256[] memory _pokeDelta
     ) public initializer {
         __ERC20_init(_name, _symbol);
@@ -31,37 +33,23 @@ contract Logic is State {
         _setupRole(MARKET_MAKER_ROLE, _admin);
 
         underlying = _underlying;
-        backingRatio = _backingRatio;
+        underlyingPerToken = _underlyingPerToken;
         pokeDelta = _pokeDelta;
         feeRecipient = _feeRecipient;
 
         // Sanity checks, no SLOAD woot
         // We gas golfing here
-        
-        uint256 i = 0;
-        for (uint256 j = 0; j < _backingRatio.length; j++) {
-            i = i + _backingRatio[j];
-        }
-        require(i == 1e18, "invalid-backing-ratio");
+        require(_underlying.length == _underlyingPerToken.length, "invalid-underlyings");
 
         int256 k = 0;
         for (uint256 j = 0; j < _pokeDelta.length; j++) {
             k = k + _pokeDelta[j];
         }
+
         require(k == 0, "invalid-poke-delta-args");
     }
 
     // **** Modifiers ****
-
-    modifier validBackingRatios() {
-        _;
-
-        uint256 i = 0;
-        for (uint256 j = 0; j < backingRatio.length; j++) {
-            i = i + backingRatio[j];
-        }
-        require(i == 1e18, "invalid-backing-ratio");
-    }
 
     modifier updatePokeTime() {
         require(
@@ -83,7 +71,7 @@ contract Logic is State {
     ///                the backingRatio will become [51e16, 49e16] when pokedUp and
     ///                [49e16, 51e16] when pokedDown
     function setPokeDelta(int256[] memory _deltas) public onlyRole(SUDO_ROLE) {
-        require(_deltas.length == backingRatio.length, "invalid-delta-length");
+        require(_deltas.length == underlying.length, "invalid-delta-length");
 
         // Should add up to 0
         int256 i = 0;
@@ -96,32 +84,30 @@ contract Logic is State {
     }
 
     /// @notice Used when market price / TWAP is > than backing.
-    ///         If set correctly, the backing ratio of the stable
-    ///         assets will decrease and the backing ratio of the volatile
+    ///         If set correctly, the underlying backing of the stable
+    ///         assets will decrease and the underlying backing of the volatile
     ///         assets will increase.
     function pokeUp()
         public
         onlyRole(SUDO_ROLE)
-        validBackingRatios
         updatePokeTime
     {
-        for (uint256 i = 0; i < backingRatio.length; i++) {
-            backingRatio[i] = uint256(int256(backingRatio[i]) + pokeDelta[i]);
+        for (uint256 i = 0; i < underlyingPerToken.length; i++) {
+            underlyingPerToken[i] = uint256(int256(underlyingPerToken[i]) + pokeDelta[i]);
         }
     }
 
     /// @notice Used when market price / TWAP is < than backing.
-    ///         If set correctly, the backing ratio of the stable
-    ///         assets will increase and the backing ratio of the volatile
+    ///         If set correctly, the underlying backing of the stable
+    ///         assets will increase and the underlying backing of the volatile
     ///         assets will decrease
     function pokeDown()
         public
         onlyRole(SUDO_ROLE)
-        validBackingRatios
         updatePokeTime
     {
-        for (uint256 i = 0; i < backingRatio.length; i++) {
-            backingRatio[i] = uint256(int256(backingRatio[i]) - pokeDelta[i]);
+        for (uint256 i = 0; i < underlyingPerToken.length; i++) {
+            underlyingPerToken[i] = uint256(int256(underlyingPerToken[i]) - pokeDelta[i]);
         }
     }
 
@@ -130,11 +116,28 @@ contract Logic is State {
         feeRecipient = _recipient;
     }
 
+    /// @notice In case anyone sends tokens to the wrong address
+    function recoverERC20(address _a) public onlyRole(SUDO_ROLE) {
+        IERC20(_a).safeTransfer(
+            msg.sender,
+            IERC20(_a).balanceOf(address(this))
+        );
+    }
+
+    /// @notice Emergency trigger
+    function setPaused(bool _p) public onlyRole(SUDO_ROLE) {
+        if (_p) {
+            _pause();
+        } else {
+            _unpause();
+        }
+    }
+
     // **** Public stateful functions ****
 
     /// @notice Mints the ASC token
     /// @param _amount Amount of ASC token to mint
-    function mint(uint256 _amount) public nonReentrant {
+    function mint(uint256 _amount) public nonReentrant whenNotPaused {
         require(_amount > 0, "non-zero only");
 
         uint256[] memory _amounts = getMintUnderlyings(_amount);
@@ -159,7 +162,7 @@ contract Logic is State {
 
     /// @notice Burns the ASC token
     /// @param _amount Amount of ASC token to burn
-    function burn(uint256 _amount) public nonReentrant {
+    function burn(uint256 _amount) public nonReentrant whenNotPaused {
         require(_amount > 0, "non-zero only");
 
         // No fee for market makers
@@ -190,15 +193,7 @@ contract Logic is State {
         uint256[] memory _amounts = new uint256[](underlying.length);
 
         for (uint256 i = 0; i < underlying.length; i++) {
-            uint256 _totalUnderlyingAmount = IERC20(underlying[i]).balanceOf(
-                address(this)
-            );
-
-            // How many underlying per mint amount
-            uint256 _singleton = (_totalUnderlyingAmount * 1e18) /
-                backingRatio[i];
-
-            _amounts[i] = (_singleton * _mintAmount) / 1e18;
+            _amounts[i] = _mintAmount * underlyingPerToken[i] / 1e18;
         }
 
         return _amounts;

@@ -2,12 +2,14 @@
 pragma solidity 0.8.10;
 
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/ERC20Upgradeable.sol";
 
 contract State is
     AccessControlUpgradeable,
     ERC20Upgradeable,
+    PausableUpgradeable,
     ReentrancyGuardUpgradeable
 {
     /***** Constants *****/
@@ -36,8 +38,8 @@ contract State is
     // Underlyings of the algo stablecoin
     address[] public underlying;
 
-    // Ratios of the underlyings, need to add up to one
-    uint256[] public backingRatio;
+    // How much underlying per token
+    uint256[] public underlyingPerToken;
 
     // How much delta will each 'poke' consist of
     // Manually set for now.

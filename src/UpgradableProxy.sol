@@ -9,4 +9,8 @@ contract UpgradableProxy is TransparentUpgradeableProxy {
         address _admin,
         bytes memory _data
     ) TransparentUpgradeableProxy(_logic, _admin, _data) {}
+
+    function getAdmin() public view returns (address) {
+        return _getAdmin();
+    }
 }
