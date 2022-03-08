@@ -24,6 +24,10 @@ contract Logic is State {
         _setupRole(SUDO_ROLE_ADMIN, _admin);
         _setupRole(SUDO_ROLE, _admin);
 
+        _setRoleAdmin(MARKET_MAKER_ROLE, MARKET_MAKER_ROLE_ADMIN);
+        _setupRole(MARKET_MAKER_ROLE_ADMIN, _admin);
+        _setupRole(MARKET_MAKER_ROLE, _admin);
+
         underlying = _underlying;
         backingRatio = _backingRatio;
         pokeDelta = _pokeDelta;
@@ -42,6 +46,17 @@ contract Logic is State {
         require(i == 1e18, "invalid-backing-ratio");
     }
 
+    modifier updatePokeTime() {
+        require(
+            block.timestamp > lastPokeTime + POKE_WAIT_PERIOD,
+            "invalid-poke-time"
+        );
+
+        _;
+
+        lastPokeTime = block.timestamp;
+    }
+
     // **** Restricted functions ****
 
     // Sets the 'poke' delta
@@ -55,30 +70,46 @@ contract Logic is State {
         pokeDelta = _deltas;
     }
 
-    /// @notice Pokes up delta
-    function pokeUp() public onlyRole(SUDO_ROLE) validBackingRatios {
+    /// @notice Used when market price / TWAP is > than backing.
+    ///         If set correctly, the backing ratio of the stable
+    ///         assets will decrease and the backing ratio of the volatile
+    ///         assets will increase.
+    function pokeUp()
+        public
+        onlyRole(SUDO_ROLE)
+        validBackingRatios
+        updatePokeTime
+    {
         for (uint256 i = 0; i < backingRatio.length; i++) {
             backingRatio[i] = uint256(int256(backingRatio[i]) + pokeDelta[i]);
         }
     }
 
-    /// @notice Pokes down delta
-    function pokeDown() public onlyRole(SUDO_ROLE) validBackingRatios {
+    /// @notice Used when market price / TWAP is < than backing.
+    ///         If set correctly, the backing ratio of the stable
+    ///         assets will increase and the backing ratio of the volatile
+    ///         assets will decrease
+    function pokeDown()
+        public
+        onlyRole(SUDO_ROLE)
+        validBackingRatios
+        updatePokeTime
+    {
         for (uint256 i = 0; i < backingRatio.length; i++) {
             backingRatio[i] = uint256(int256(backingRatio[i]) - pokeDelta[i]);
         }
     }
 
-    /// @notice Fee recipient from mint/burn
+    /// @notice Sets the fee recipient for mint/burn
     function setFeeRecipient(address _recipient) public onlyRole(SUDO_ROLE) {
         feeRecipient = _recipient;
     }
 
-    // **** Public functions ****
+    // **** Public stateful functions ****
 
     /// @notice Mints the ASC token
     /// @param _amount Amount of ASC token to mint
-    function mint(uint256 _amount) public {
+    function mint(uint256 _amount) public nonReentrant {
         require(_amount > 0, "non-zero only");
 
         uint256[] memory _amounts = getMintUnderlyings(_amount);
@@ -91,8 +122,8 @@ contract Logic is State {
             );
         }
 
-        // No fee for fee recipient
-        if (msg.sender == feeRecipient) {
+        // No fee for market makers
+        if (hasRole(MARKET_MAKER_ROLE, msg.sender)) {
             _mint(msg.sender, _amount);
         } else {
             uint256 _fee = (_amount * MINT_BURN_FEE) / 1e18;
@@ -103,10 +134,11 @@ contract Logic is State {
 
     /// @notice Burns the ASC token
     /// @param _amount Amount of ASC token to burn
-    function burn(uint256 _amount) public {
+    function burn(uint256 _amount) public nonReentrant {
         require(_amount > 0, "non-zero only");
 
-        if (msg.sender == feeRecipient) {
+        // No fee for market makers
+        if (hasRole(MARKET_MAKER_ROLE, msg.sender)) {
             _burn(msg.sender, _amount);
         } else {
             uint256 _fee = (_amount * MINT_BURN_FEE) / 1e18;
@@ -122,6 +154,8 @@ contract Logic is State {
             } else {}
         }
     }
+
+    // **** View only functions ****
 
     function getMintUnderlyings(uint256 _mintAmount)
         public
