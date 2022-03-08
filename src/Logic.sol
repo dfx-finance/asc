@@ -9,7 +9,9 @@ import "./State.sol";
 contract Logic is State {
     using SafeERC20 for IERC20;
 
-    constructor(
+    // We don't need to check twice if the contract's initialized as
+    // __ERC20_init does that check
+    function initialize(
         string memory _name,
         string memory _symbol,
         address _admin,
@@ -17,7 +19,7 @@ contract Logic is State {
         address[] memory _underlying,
         uint256[] memory _backingRatio,
         int256[] memory _pokeDelta
-    ) {
+    ) public initializer {
         __ERC20_init(_name, _symbol);
 
         _setRoleAdmin(SUDO_ROLE, SUDO_ROLE_ADMIN);
@@ -32,6 +34,21 @@ contract Logic is State {
         backingRatio = _backingRatio;
         pokeDelta = _pokeDelta;
         feeRecipient = _feeRecipient;
+
+        // Sanity checks, no SLOAD woot
+        // We gas golfing here
+        
+        uint256 i = 0;
+        for (uint256 j = 0; j < _backingRatio.length; j++) {
+            i = i + _backingRatio[j];
+        }
+        require(i == 1e18, "invalid-backing-ratio");
+
+        int256 k = 0;
+        for (uint256 j = 0; j < _pokeDelta.length; j++) {
+            k = k + _pokeDelta[j];
+        }
+        require(k == 0, "invalid-poke-delta-args");
     }
 
     // **** Modifiers ****
@@ -67,6 +84,14 @@ contract Logic is State {
     ///                [49e16, 51e16] when pokedDown
     function setPokeDelta(int256[] memory _deltas) public onlyRole(SUDO_ROLE) {
         require(_deltas.length == backingRatio.length, "invalid-delta-length");
+
+        // Should add up to 0
+        int256 i = 0;
+        for (uint256 j = 0; j < _deltas.length; j++) {
+            i = i + _deltas[j];
+        }
+        require(i == 0, "invalid-poke-delta-args");
+
         pokeDelta = _deltas;
     }
 
