@@ -196,6 +196,19 @@ contract LogicTest is DSTest {
         assertGt(amounts1[1], amounts0[1]);
     }
 
+    function test_poke_down_underlyings() public {
+        uint256[] memory amounts0 = proxy.getMintUnderlyings(1e18);
+        test_poke_down();
+        uint256[] memory amounts1 = proxy.getMintUnderlyings(1e18);
+
+        // 0 is stable
+        // 1 is volatile
+
+        // Poke down = more dependent on stablecoins
+        assertGt(amounts1[0], amounts0[0]);
+        assertLt(amounts1[1], amounts0[1]);
+    }
+
     function test_poke_up() public {
         sudo.call(
             address(proxy),
@@ -216,9 +229,21 @@ contract LogicTest is DSTest {
         test_poke_up();
     }
 
-    function testFail_poke_up() public {
+    function test_poke_down_2() public {
+        test_poke_down();
+        cheats.warp(block.timestamp + proxy.POKE_WAIT_PERIOD() + 60);
+        test_poke_down();
+    }
+
+    function testFail_poke_up_2() public {
         // Need to wait POKE_WAIT_PERIOD between each poke
         test_poke_up();
         test_poke_up();
+    }
+
+    function testFail_poke_down_2() public {
+        // Need to wait POKE_WAIT_PERIOD between each poke
+        test_poke_down();
+        test_poke_down();
     }
 }
