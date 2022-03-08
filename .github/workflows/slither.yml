@@ -1,28 +1,23 @@
-name: Slither Analysis
+
+   
+name: CI
 on: [push]
-defaults:
-  run:
-    shell: bash -ieo pipefail {0}
+
 jobs:
-  analyze:
+  run-ci:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
-      with:
+      - uses: actions/checkout@v2
+        with:
           submodules: recursive
-    - name: Install Foundry
-      run:
-        curl -L https://foundry.paradigm.xyz | bash
-    - name: Install Rust
-      run: |
-       curl https://sh.rustup.rs -sSf -o rust-install.sh
-       sh rust-install.sh -y
-    - name: Run Build
-      run: |
-        foundryup
-        forge build
-    - name: Run Tests
-      run:
-        forge test
 
+      - name: Install Foundry
+        uses: onbjerg/foundry-toolchain@v1
+        with:
+          version: nightly
+          
+      - name: Run Build
+        run: forge build
+
+      - name: Run Tests
+        run: forge test
