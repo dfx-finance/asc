@@ -1,5 +1,3 @@
-
-   
 name: CI
 on: [push]
 
@@ -15,9 +13,18 @@ jobs:
         uses: onbjerg/foundry-toolchain@v1
         with:
           version: nightly
+
+      - name: Pull library deps
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          forge update
           
       - name: Run Build
-        run: forge build
+        run: |
+          forge clean
+          forge build --optimize --optimize-runs 1000000
 
       - name: Run Tests
-        run: forge test
+        run: |
+          forge clean
+          forge test --optimize --optimize-runs 1000000 -v
