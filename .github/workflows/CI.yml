@@ -11,7 +11,8 @@ jobs:
 
       - name: Run Slither
         uses: crytic/slither-action@v0.1.0
-        target: ./src
+        with:
+          target: ./src
 
       - name: Install Foundry
         uses: onbjerg/foundry-toolchain@v1
