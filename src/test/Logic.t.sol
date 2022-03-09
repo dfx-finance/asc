@@ -79,7 +79,7 @@ contract LogicTest is DSTest {
     }
 
     // Should only be able to initialize once
-    function testFail_reinitialize() public {
+    function testFail_logic__reinitialize() public {
         address[] memory underlying = new address[](2);
         underlying[0] = address(stablecoin);
         underlying[1] = address(volatileToken);
@@ -108,7 +108,7 @@ contract LogicTest is DSTest {
         );
     }
 
-    function test_proxy_erc20() public {
+    function test_logic_proxy_erc20() public {
         assertEq(proxy.name(), "Coin");
         assertEq(proxy.symbol(), "COIN");
         assertEq(proxy.totalSupply(), 0);
@@ -118,7 +118,7 @@ contract LogicTest is DSTest {
         assertTrue(proxy.hasRole(proxy.MARKET_MAKER_ROLE(), address(sudo)));
     }
 
-    function test_access_control() public {
+    function test_logic_access_control() public {
         MockUser newUser = new MockUser();
 
         assertTrue(!proxy.hasRole(proxy.MARKET_MAKER_ROLE(), address(newUser)));
@@ -144,7 +144,7 @@ contract LogicTest is DSTest {
         assertTrue(proxy.hasRole(proxy.SUDO_ROLE(), address(newUser)));
     }
 
-    function test_mint_fee() public {
+    function test_logic_mint_fee() public {
         assertEq(proxy.balanceOf(address(this)), 0);
 
         stablecoin.mint(address(this), 99e18);
@@ -160,29 +160,34 @@ contract LogicTest is DSTest {
 
         // 0.5% fee
         assertEq(proxy.balanceOf(address(this)), 995e17);
+        assertEq(proxy.balanceOf(address(feeCollector)), 5e17);
     }
 
-    function test_burn_fee() public {
+    function test_logic_burn_fee() public {
         // Have 99.5 tokens
-        test_mint_fee();
+        test_logic_mint_fee();
 
         assertEq(stablecoin.balanceOf(address(this)), 0);
         assertEq(volatileToken.balanceOf(address(this)), 0);
 
         // How much do we get burning 10 tokens?
         // Multiply by 0.995 to get actual output
-        uint256[] memory amounts = proxy.getMintUnderlyings(10e18);
+        uint256[] memory amounts = proxy.getUnderlyings(10e18);
         amounts[0] = (amounts[0] * 995) / 1000;
         amounts[1] = (amounts[1] * 995) / 1000;
 
         // Burn
         proxy.burn(10e18);
 
+        // Mint + burn fee
+        uint256 _fee = 5e17 + 5e16;
+
+        assertEq(proxy.balanceOf(address(feeCollector)), _fee);
         assertEq(stablecoin.balanceOf(address(this)), amounts[0]);
         assertEq(volatileToken.balanceOf(address(this)), amounts[1]);
     }
 
-    function test_mint_no_fee() public {
+    function test_logic_mint_no_fee() public {
         assertEq(proxy.balanceOf(address(this)), 0);
 
         stablecoin.mint(address(this), 99e18);
@@ -207,15 +212,16 @@ contract LogicTest is DSTest {
 
         // No fee
         assertEq(proxy.balanceOf(address(this)), 100e18);
+        assertEq(proxy.balanceOf(address(feeCollector)), 0);
     }
 
-    function test_burn_no_fee() public {
-        test_mint_no_fee();
+    function test_logic_burn_no_fee() public {
+        test_logic_mint_no_fee();
 
         assertEq(stablecoin.balanceOf(address(this)), 0);
         assertEq(volatileToken.balanceOf(address(this)), 0);
 
-        uint256[] memory amounts = proxy.getMintUnderlyings(10e18);
+        uint256[] memory amounts = proxy.getUnderlyings(10e18);
 
         proxy.burn(10e18);
 
@@ -223,10 +229,10 @@ contract LogicTest is DSTest {
         assertEq(volatileToken.balanceOf(address(this)), amounts[1]);
     }
 
-    function test_poke_up_underlyings() public {
-        uint256[] memory amounts0 = proxy.getMintUnderlyings(1e18);
-        test_poke_up();
-        uint256[] memory amounts1 = proxy.getMintUnderlyings(1e18);
+    function test_logic_poke_up_underlyings() public {
+        uint256[] memory amounts0 = proxy.getUnderlyings(1e18);
+        test_logic_poke_up();
+        uint256[] memory amounts1 = proxy.getUnderlyings(1e18);
 
         // 0 is stable
         // 1 is volatile
@@ -236,10 +242,10 @@ contract LogicTest is DSTest {
         assertGt(amounts1[1], amounts0[1]);
     }
 
-    function test_poke_down_underlyings() public {
-        uint256[] memory amounts0 = proxy.getMintUnderlyings(1e18);
-        test_poke_down();
-        uint256[] memory amounts1 = proxy.getMintUnderlyings(1e18);
+    function test_logic_poke_down_underlyings() public {
+        uint256[] memory amounts0 = proxy.getUnderlyings(1e18);
+        test_logic_poke_down();
+        uint256[] memory amounts1 = proxy.getUnderlyings(1e18);
 
         // 0 is stable
         // 1 is volatile
@@ -249,56 +255,56 @@ contract LogicTest is DSTest {
         assertLt(amounts1[1], amounts0[1]);
     }
 
-    function test_poke_up() public {
+    function test_logic_poke_up() public {
         sudo.call(
             address(proxy),
             abi.encodeWithSelector(proxy.pokeUp.selector)
         );
     }
 
-    function test_poke_down() public {
+    function test_logic_poke_down() public {
         sudo.call(
             address(proxy),
             abi.encodeWithSelector(proxy.pokeDown.selector)
         );
     }
 
-    function test_poke_up_2() public {
-        test_poke_up();
+    function test_logic_poke_up_2() public {
+        test_logic_poke_up();
         cheats.warp(block.timestamp + proxy.POKE_WAIT_PERIOD() + 60);
-        test_poke_up();
+        test_logic_poke_up();
     }
 
-    function test_poke_down_2() public {
-        test_poke_down();
+    function test_logic_poke_down_2() public {
+        test_logic_poke_down();
         cheats.warp(block.timestamp + proxy.POKE_WAIT_PERIOD() + 60);
-        test_poke_down();
+        test_logic_poke_down();
     }
 
-    function testFail_poke_up_2() public {
+    function testFail_logic__poke_up_2() public {
         // Need to wait POKE_WAIT_PERIOD between each poke
-        test_poke_up();
-        test_poke_up();
+        test_logic_poke_up();
+        test_logic_poke_up();
     }
 
-    function testFail_poke_down_2() public {
+    function testFail_logic__poke_down_2() public {
         // Need to wait POKE_WAIT_PERIOD between each poke
-        test_poke_down();
-        test_poke_down();
+        test_logic_poke_down();
+        test_logic_poke_down();
     }
 
-    function testFail_pause() public {
+    function testFail_logic__pause() public {
         // Minting cannot happen after pause
-        test_mint_fee();
+        test_logic_mint_fee();
 
         sudo.call(
             address(proxy),
             abi.encodeWithSelector(proxy.setPaused.selector, true)
         );
-        test_mint_fee();
+        test_logic_mint_fee();
     }
 
-    function test_unpause() public {
+    function test_logic_unpause() public {
         // Contract can be unpaused
         sudo.call(
             address(proxy),
@@ -313,6 +319,55 @@ contract LogicTest is DSTest {
             address(proxy),
             abi.encodeWithSelector(proxy.setPaused.selector, false)
         );
-        test_mint_fee();
+        test_logic_mint_fee();
+    }
+
+    // Fuzzing
+
+    function test_logic_mint_fee_fuzz(uint256 _amount) public {
+        cheats.assume(_amount > 100);
+        cheats.assume(_amount < 1e30);
+
+        stablecoin.mint(address(this), _amount * 99 / 100);
+        volatileToken.mint(address(this), _amount / 100);
+
+        stablecoin.approve(address(proxy), type(uint256).max);
+        volatileToken.approve(address(proxy), type(uint256).max);
+
+        proxy.mint(_amount);
+
+        assertEq(stablecoin.balanceOf(address(this)), 0);
+        assertEq(volatileToken.balanceOf(address(this)), 0);
+
+        // 0.5% fee
+        uint256 _fee = _amount * MINT_BURN_FEE / 1e18;
+        assertEq(proxy.balanceOf(address(this)), _amount - _fee);
+        assertEq(proxy.balanceOf(address(feeCollector)), _fee);
+    }
+
+    function test_logic_burn_fee_fuzz(uint256 _amount) public {
+        // Mint some tokens
+        test_logic_mint_fee_fuzz(_amount);
+
+        // We only minted that much due to fees
+        uint256 _fee = _amount * MINT_BURN_FEE / 1e18;
+        _amount = _amount - _fee;
+        assertEq(proxy.balanceOf(address(this)), _amount);
+
+        // Now calculate how much we get from burn
+        assertEq(stablecoin.balanceOf(address(this)), 0);
+        assertEq(volatileToken.balanceOf(address(this)), 0);
+
+        // How much do we get burning 10 tokens?
+        // Multiply by 0.995 to get actual output
+        uint256 _burnFee = _amount * MINT_BURN_FEE / 1e18;
+        uint256[] memory amounts = proxy.getUnderlyings(_amount - _burnFee);
+
+        proxy.burn(_amount);
+
+        // Add fee
+        _fee = _fee + (_amount * MINT_BURN_FEE / 1e18);
+        assertEq(stablecoin.balanceOf(address(this)), amounts[0]);
+        assertEq(volatileToken.balanceOf(address(this)), amounts[1]);
     }
 }

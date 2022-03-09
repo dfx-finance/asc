@@ -147,7 +147,7 @@ contract Logic is State {
     function mint(uint256 _amount) public nonReentrant whenNotPaused {
         require(_amount > 0, "non-zero only");
 
-        uint256[] memory _amounts = getMintUnderlyings(_amount);
+        uint256[] memory _amounts = getUnderlyings(_amount);
 
         for (uint256 i = 0; i < underlying.length; i++) {
             IERC20(underlying[i]).safeTransferFrom(
@@ -182,7 +182,7 @@ contract Logic is State {
             _amount = _amount - _fee;
         }
 
-        uint256[] memory _amounts = getMintUnderlyings(_amount);
+        uint256[] memory _amounts = getUnderlyings(_amount);
         for (uint256 i = 0; i < underlying.length; i++) {
             IERC20(underlying[i]).safeTransfer(msg.sender, _amounts[i]);
         }
@@ -190,7 +190,11 @@ contract Logic is State {
 
     // **** View only functions ****
 
-    function getMintUnderlyings(uint256 _mintAmount)
+    /// @notice Get the underlyings of `_amount` of 'logic' tokens
+    ///         For example, how many underlyings will `_amount` token yield?
+    ///         Or, how many underlyings do I need to mint `_amount` token?
+    /// @param _amount The amount of 'logic' token
+    function getUnderlyings(uint256 _amount)
         public
         view
         returns (uint256[] memory)
@@ -198,7 +202,7 @@ contract Logic is State {
         uint256[] memory _amounts = new uint256[](underlying.length);
 
         for (uint256 i = 0; i < underlying.length; i++) {
-            _amounts[i] = (_mintAmount * underlyingPerToken[i]) / 1e18;
+            _amounts[i] = (_amount * underlyingPerToken[i]) / 1e18;
         }
 
         return _amounts;
