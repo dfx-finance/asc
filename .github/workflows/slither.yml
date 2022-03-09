@@ -13,11 +13,6 @@ jobs:
         uses: onbjerg/foundry-toolchain@v1
         with:
           version: nightly
-
-      - name: Pull library deps
-        run: |
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
-          forge update
           
       - name: Run Build
         run: |
