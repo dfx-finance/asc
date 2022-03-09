@@ -19,11 +19,6 @@ jobs:
           forge clean
           forge build --optimize --optimize-runs 1000000
 
-      - name: Run Slither
-        uses: crytic/slither-action@v0.1.0
-        with:
-          target: src/
-
       - name: Run Tests
         run: |
           forge clean
