@@ -12,7 +12,8 @@ jobs:
       - name: Run Slither
         uses: crytic/slither-action@v0.1.0
         with:
-          target: ./src
+          target: src/
+          slither-args: --solc-remaps @openzeppelin=node_modules/@openzeppelin
 
       - name: Install Foundry
         uses: onbjerg/foundry-toolchain@v1
