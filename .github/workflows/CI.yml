@@ -9,12 +9,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Run Slither
-        uses: crytic/slither-action@v0.1.0
-        with:
-          target: src/
-          slither-args: --solc-remaps @openzeppelin=node_modules/@openzeppelin
-
       - name: Install Foundry
         uses: onbjerg/foundry-toolchain@v1
         with:
@@ -24,6 +18,11 @@ jobs:
         run: |
           forge clean
           forge build --optimize --optimize-runs 1000000
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.1.0
+        with:
+          target: src/
 
       - name: Run Tests
         run: |
