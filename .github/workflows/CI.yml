@@ -9,11 +9,15 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Run Slither
+        uses: crytic/slither-action@v0.1.0
+        target: ./src
+
       - name: Install Foundry
         uses: onbjerg/foundry-toolchain@v1
         with:
           version: nightly
-          
+
       - name: Run Build
         run: |
           forge clean
