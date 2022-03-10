@@ -45,13 +45,6 @@ contract Logic is State {
             _underlying.length == _underlyingPerToken.length,
             "invalid-underlyings"
         );
-
-        int256 k = 0;
-        for (uint256 j = 0; j < _pokeDelta.length; j++) {
-            k = k + _pokeDelta[j];
-        }
-
-        require(k == 0, "invalid-poke-delta-args");
     }
 
     // **** Modifiers ****
@@ -77,14 +70,6 @@ contract Logic is State {
     ///                [49e16, 51e16] when pokedDown
     function setPokeDelta(int256[] memory _deltas) public onlyRole(SUDO_ROLE) {
         require(_deltas.length == underlying.length, "invalid-delta-length");
-
-        // Should add up to 0
-        int256 i = 0;
-        for (uint256 j = 0; j < _deltas.length; j++) {
-            i = i + _deltas[j];
-        }
-        require(i == 0, "invalid-poke-delta-args");
-
         pokeDelta = _deltas;
     }
 
