@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.10;
+pragma solidity ^0.8.10;
 
 import "ds-test/test.sol";
 import "./lib/MockToken.sol";
@@ -301,6 +301,7 @@ contract LogicTest is DSTest {
             address(proxy),
             abi.encodeWithSelector(proxy.setPaused.selector, true)
         );
+
         test_logic_mint_fee();
     }
 
