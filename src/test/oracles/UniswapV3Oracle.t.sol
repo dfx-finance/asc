@@ -34,7 +34,7 @@ contract UniswapV3OracleTest is DSTest {
             ? (wethPrice * 1e6) / wethPriceCL
             : (wethPriceCL * 1e6) / wethPrice;
 
-        // 980000 = 98% in 1e6 land
-        assertGt(delta, 980000);
+        // 990000 = 99% in 1e6 land
+        assertGt(delta, 990000);
     }
 }

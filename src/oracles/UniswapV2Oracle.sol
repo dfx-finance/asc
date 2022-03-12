@@ -33,7 +33,7 @@ contract UniswapV2Oracle {
         period = _period;
 
         pair = IUniswapV2Pair(
-            IUniswapV2Factory(factory).createPair(tokenA, tokenB)
+            IUniswapV2Factory(factory).getPair(tokenA, tokenB)
         );
 
         token0 = pair.token0();
@@ -80,13 +80,14 @@ contract UniswapV2Oracle {
     function consult(address token, uint256 amountIn)
         external
         view
-        returns (uint256 amountOut)
+        returns (uint256)
     {
         if (token == token0) {
-            amountOut = price0Average.mul(amountIn).decode144();
-        } else {
-            require(token == token1, "ExampleOracleSimple: INVALID_TOKEN");
-            amountOut = price1Average.mul(amountIn).decode144();
+            return price0Average.mul(amountIn).decode144();
+        } else if (token == token1) {
+            return price1Average.mul(amountIn).decode144();
         }
+
+        revert("ExampleOracleSimple: INVALID_TOKEN");
     }
 }
