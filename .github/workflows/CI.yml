@@ -22,4 +22,4 @@ jobs:
       - name: Run Tests
         run: |
           forge clean
-          forge test --optimize --optimize-runs 1000000 -v
+          forge test --optimize --optimize-runs 1000000 -v -f https://mainnet.infura.io/v3/406b22e3688c42898054d22555f43271
