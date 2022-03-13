@@ -24,6 +24,7 @@ contract Logic is State {
         int256[] memory _pokeDelta
     ) public initializer {
         __ERC20_init(_name, _symbol);
+        __ReentrancyGuard_init();
 
         _setRoleAdmin(SUDO_ROLE, SUDO_ROLE_ADMIN);
         _setupRole(SUDO_ROLE_ADMIN, _admin);

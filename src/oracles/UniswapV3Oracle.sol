@@ -5,8 +5,6 @@ pragma solidity ^0.8.10;
 
 import "../libraries/UniswapV3.sol";
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
 contract UniswapV3Oracle {
     address internal constant UNIV3_FACTORY =
         0x1F98431c8aD98523631AE4a59f267346ea31F984;
@@ -29,7 +27,7 @@ contract UniswapV3Oracle {
             TWAP_PERIOD
         );
 
-        uint256 baseUnit = 10**uint128(ERC20(baseToken).decimals());
+        uint256 baseUnit = 10**uint128(IERC20Metadata(baseToken).decimals());
 
         uint256 quote = UniswapV3OracleLibrary.getQuoteAtTick(
             arithmeticAverageTick,
