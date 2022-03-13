@@ -394,6 +394,16 @@ contract MUNI is
             token1.safeTransfer(msg.sender, uint256(amount1Delta));
     }
 
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        // get position information
+        return this.onERC721Received.selector;
+    }
+
     /**** View only functions ****/
 
     /// @notice UniswapV3 position
