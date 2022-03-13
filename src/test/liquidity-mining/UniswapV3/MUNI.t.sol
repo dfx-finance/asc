@@ -10,13 +10,16 @@ import "../../lib/MockToken.sol";
 import "../../../libraries/Babylonian.sol";
 import "../../../libraries/TickMath.sol";
 import "../../../libraries/UniswapV3.sol";
+import "../../../libraries/FixedPoint.sol";
 
 import "../../../interfaces/IUniswapV3.sol";
 
 import "../../../liquidity-mining/UniswapV3/MUNI.sol";
 
-
 contract MUNITest is DSTest {
+    using FixedPoint for FixedPoint.uq112x112;
+    using FixedPoint for FixedPoint.uq144x112;
+
     using TickMath for int24;
 
     MUNI muni;
@@ -30,7 +33,8 @@ contract MUNITest is DSTest {
         INonfungiblePositionManager(Mainnet.UNIV3_POS_MANAGER);
 
     uint24 public constant fee = 3000;
-    
+    int24 tickSpacing;
+
     function setUp() public {
         token0 = new MockToken();
         token1 = new MockToken();
@@ -48,6 +52,7 @@ contract MUNITest is DSTest {
                 fee
             )
         );
+        tickSpacing = pool.tickSpacing();
 
         /*
             Getting tick from price
@@ -67,23 +72,29 @@ contract MUNITest is DSTest {
             # multiply the exponents in the denominator to get the final expression
             sqrtRatioX96 ** 2 / 2 ** 192 = price
         */
-        // 0.95
-        // uint160 lowerSqrtPriceX96 = uint160(Babylonian.sqrt( * 2**96));
-        // int24 lowerTick = TickMath.getTickAtSqrtRatio(lowerSqrtPriceX96);
-        int24 lowerTick = -887220;
-        int24 upperTick = 887220;
 
-        // 1.05
-        // uint160 upperSqrtPriceX96 = uint160(Babylonian.sqrt(105e16 * 2**96));
-        // int24 upperTick = TickMath.getTickAtSqrtRatio(upperSqrtPriceX96);
+        uint160 lowerSqrtPriceX96 = FixedPoint
+            .fraction(100, 110)
+            .sqrt()
+            .mul(2**96)
+            .decode144();
+        uint160 upperSqrtPriceX96 = FixedPoint
+            .fraction(110, 100)
+            .sqrt()
+            .mul(2**96)
+            .decode144();
+
+        int24 lowerTick = TickMath.getTickAtSqrtRatio(lowerSqrtPriceX96);
+        lowerTick = lowerTick - (lowerTick % tickSpacing);
+
+        int24 upperTick = TickMath.getTickAtSqrtRatio(upperSqrtPriceX96);
+        upperTick = upperTick - (upperTick % tickSpacing) + tickSpacing;
 
         // Initialize at spot price
-        uint160 sqrtPriceX96 = 79239847721719688160768050412; // uint160(Babylonian.sqrt(1 * 2**96));
+        uint160 sqrtPriceX96 = uint160(Babylonian.sqrt(1) * 2**96);
+
         pool.initialize(sqrtPriceX96);
         pool.increaseObservationCardinalityNext(5);
-
-        // emit log_uint(sqrtPriceX96);
-        // emit log_int(TickMath.getTickAtSqrtRatio(sqrtPriceX96));
 
         muni = new MUNI(
             address(this), // owner
@@ -96,10 +107,51 @@ contract MUNITest is DSTest {
         );
     }
 
+    function test_pool_nftpositionmanager() public {
+        uint160 lowerSqrtPriceX96 = FixedPoint
+            .fraction(100, 110)
+            .sqrt()
+            .mul(2**96)
+            .decode144();
+        uint160 upperSqrtPriceX96 = FixedPoint
+            .fraction(110, 100)
+            .sqrt()
+            .mul(2**96)
+            .decode144();
+
+        int24 lowerTick = TickMath.getTickAtSqrtRatio(lowerSqrtPriceX96);
+        lowerTick = lowerTick - (lowerTick % tickSpacing);
+
+        int24 upperTick = TickMath.getTickAtSqrtRatio(upperSqrtPriceX96);
+        upperTick = upperTick - (upperTick % tickSpacing) + tickSpacing;
+
+        token0.mint(address(this), 10e18);
+        token1.mint(address(this), 10e18);
+
+        token0.approve(address(univ3PosManager), 10e18);
+        token1.approve(address(univ3PosManager), 10e18);
+
+        univ3PosManager.mint(
+            INonfungiblePositionManager.MintParams({
+                token0: pool.token0(),
+                token1: pool.token1(),
+                fee: fee,
+                tickLower: lowerTick,
+                tickUpper: upperTick,
+                amount0Desired: 10e18,
+                amount1Desired: 10e18,
+                amount0Min: 0e18,
+                amount1Min: 0e18,
+                recipient: address(this),
+                deadline: block.timestamp + 1
+            })
+        );
+    }
+
     function test_muni_mint() public {
         (uint256 amount0, uint256 amount1, uint256 lpAmount) = muni
             .getMintAmounts(10e18, 10e18);
-        
+
         token0.mint(address(this), amount0);
         token0.approve(address(muni), amount0);
 
