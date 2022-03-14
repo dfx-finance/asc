@@ -247,7 +247,7 @@ contract MUNI is
 
     // **** Permissioned functions **** //
 
-    /// @notice Change the range of underlying UniswapV3 position, only manager can call
+    /// @notice Change the range of underlying UniswapV3 position, only owner can call
     /// @dev When changing the range the inventory of token0 and token1 may be rebalanced
     /// with a swap to deposit as much liquidity as possible into the new position. Swap parameters
     /// can be computed by simulating the whole operation: remove all liquidity, deposit as much
@@ -311,7 +311,7 @@ contract MUNI is
         emit Rebalance(newLowerTick, newUpperTick, liquidity, newLiquidity);
     }
 
-    /// @notice Reinvest fees earned into underlying position, only gelato executors can call
+    /// @notice Reinvest fees earned into underlying position
     /// Position bounds CANNOT be altered by gelato, only manager may via executiveRebalance.
     /// Frequency of rebalance configured with gelatoRebalanceBPS, alterable by manager.
     function rebalance(
@@ -394,16 +394,6 @@ contract MUNI is
             token1.safeTransfer(msg.sender, uint256(amount1Delta));
     }
 
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        // get position information
-        return this.onERC721Received.selector;
-    }
-
     /**** View only functions ****/
 
     /// @notice UniswapV3 position
@@ -450,6 +440,24 @@ contract MUNI is
                 newLiquidity
             );
         }
+    }
+
+    /// @notice Compute amount of token0 and token1 returned to user upon burning `lpAmount` of MUNI tokens
+    /// @param lpAmount The number of MUNI tokens to burn
+    /// @return amount0 actual amount of token0 returned
+    /// @return amount1 actual amount of token1 returned
+    function getBurnAmounts(uint256 lpAmount)
+        external
+        view
+        returns (uint256 amount0, uint256 amount1)
+    {
+        (
+            uint256 amount0Current,
+            uint256 amount1Current
+        ) = getUnderlyingBalances();
+
+        amount0 = (amount0Current * lpAmount) / totalSupply();
+        amount1 = (amount1Current * lpAmount) / totalSupply();
     }
 
     /// @notice compute total underlying holdings of the MUNI token supply
