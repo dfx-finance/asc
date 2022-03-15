@@ -11,3 +11,12 @@ forge build
 forge test -vvv
 forge test -f http://127.0.0.1:8545 -vvv
 ```
+
+
+## Deployment
+
+```
+node v16.13.0
+
+node --experimental-json-modules scripts/01-deploy-dfxcadc.js
+```
