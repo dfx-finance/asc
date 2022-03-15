@@ -2,21 +2,29 @@
 pragma solidity ^0.8.10;
 
 import "ds-test/test.sol";
+import {stdCheats} from "@forge-std/stdlib.sol";
+
 import "../lib/MockToken.sol";
 import "../lib/MockUser.sol";
+import "../lib/Address.sol";
 import "../lib/CheatCodes.sol";
 
 import "../../oracles/DfxCadTWAP.sol";
 import "../../dfx-cadc/DfxCadcLogic.sol";
 import "../../ASCUpgradableProxy.sol";
 
-contract DfxCadcLogicTest is DSTest {
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+contract DfxCadcLogicTest is DSTest, stdCheats {
     // Did it this way to obtain interface
-    DfxCadcLogic proxy;
+    DfxCadcLogic dfxCadc;
 
     ASCUpgradableProxy upgradeableProxy;
     DfxCadcLogic logic;
     DfxCadTWAP twap;
+
+    IERC20 dfx = IERC20(Mainnet.DFX);
+    IERC20 cadc = IERC20(Mainnet.CADC);
 
     // Mock users so we can have many addresses
     MockUser admin;
@@ -65,11 +73,23 @@ contract DfxCadcLogicTest is DSTest {
             callargs
         );
 
-        proxy = DfxCadcLogic(address(upgradeableProxy));
+        dfxCadc = DfxCadcLogic(address(upgradeableProxy));
+        
+        cadc.approve(address(dfxCadc), type(uint256).max);
+        dfx.approve(address(dfxCadc), type(uint256).max);
+    }
+
+    function tipCadc(address _recipient, uint256 _amount) internal {
+        // Tip doesn't work on proxies :\
+        cheats.store(
+            Mainnet.CADC,
+            keccak256(abi.encode(_recipient, 9)), // slot 9
+            bytes32(_amount)
+        );
     }
 
     function test_dfxcadc_get_underlyings() public {
-        (uint256 cadcAmount, uint256 dfxAmount) = proxy.getUnderlyings(100e18);
+        (uint256 cadcAmount, uint256 dfxAmount) = dfxCadc.getUnderlyings(100e18);
         uint256 cadPerDfx = twap.read();
         uint256 sum = cadcAmount + (dfxAmount * cadPerDfx / 1e18);
 
@@ -77,5 +97,19 @@ contract DfxCadcLogicTest is DSTest {
         // Assume 1 CADC = 1 CAD
         assertLe(sum, 100e18);
         assertGt(sum, 9999e16);
+    }
+
+    function test_dfxcadc_mint(uint256 lpAmount) public {
+        cheats.assume(lpAmount > 1e6);
+        cheats.assume(lpAmount < 1_000_000_000e18);
+
+        (uint256 cadcAmount, uint256 dfxAmount) = dfxCadc.getUnderlyings(lpAmount);
+
+        tipCadc(address(this), cadcAmount);
+        tip(Mainnet.DFX, address(this), dfxAmount);
+
+        dfxCadc.mint(lpAmount);
+        uint256 fee = lpAmount * dfxCadc.mintBurnFee() / 1e18;
+        assertEq(dfxCadc.balanceOf(address(this)), lpAmount - fee);
     }
 }

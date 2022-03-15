@@ -42,6 +42,7 @@ contract DfxCadcState is
     // as you'll be changing the slots
 
     // TWAP Oracle address
+    // 1 DFX = X CAD?
     address public dfxCadTwap;
 
     // Will only be backed by DFX and CADC so this should be sufficient
