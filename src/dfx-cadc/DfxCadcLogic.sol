@@ -28,7 +28,9 @@ contract DfxCadcLogic is DfxCadcState {
         uint256 _dfxRatio,
         uint256 _pokeRatioDelta
     ) public initializer {
+        __AccessControl_init();
         __ERC20_init(_name, _symbol);
+        __Pausable_init();
         __ReentrancyGuard_init();
 
         _setRoleAdmin(SUDO_ROLE, SUDO_ROLE_ADMIN);

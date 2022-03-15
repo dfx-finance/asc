@@ -3,6 +3,7 @@ pragma solidity ^0.8.10;
 
 import "ds-test/test.sol";
 import {stdCheats} from "@forge-std/stdlib.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../lib/MockToken.sol";
 import "../lib/MockUser.sol";
@@ -13,7 +14,7 @@ import "../../oracles/DfxCadTWAP.sol";
 import "../../dfx-cadc/DfxCadcLogic.sol";
 import "../../ASCUpgradableProxy.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../../interfaces/IDfxCurve.sol";
 
 contract DfxCadcLogicTest is DSTest, stdCheats {
     // Did it this way to obtain interface
@@ -25,6 +26,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
 
     IERC20 dfx = IERC20(Mainnet.DFX);
     IERC20 cadc = IERC20(Mainnet.CADC);
+    IERC20 usdc = IERC20(Mainnet.USDC);
 
     // Mock users so we can have many addresses
     MockUser admin;
@@ -43,14 +45,18 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
     uint256 internal constant CADC_RATIO = 95e16; // 95%s
     uint256 internal constant POKE_DELTA_RATIO = 1e16; // 1%
 
+    // Used to calculate spot prices
+    IUniswapV2Router02 sushiRouter = IUniswapV2Router02(Mainnet.SUSHI_ROUTER);
+    IDfxCurve dfxUsdcCadcA =
+        IDfxCurve(0xa6C0CbCaebd93AD3C6c94412EC06aaA37870216d);
+
     function setUp() public {
         admin = new MockUser();
         sudo = new MockUser();
         feeCollector = new MockUser();
 
-        twap = new DfxCadTWAP();
-        cheats.warp(block.timestamp + 1 days);
-        cheats.prank(address(this), address(this));
+        twap = new DfxCadTWAP(address(this));
+        cheats.warp(block.timestamp + twap.period() + 1);
         twap.update();
 
         logic = new DfxCadcLogic();
@@ -292,7 +298,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeUp.selector, new bytes(0))
         );
-        cheats.warp(block.timestamp + dfxCadc.POKE_WAIT_PERIOD() + 1 minutes);
+        cheats.warp(block.timestamp + dfxCadc.POKE_WAIT_PERIOD() + 1);
         sudo.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeUp.selector, new bytes(0))
@@ -315,7 +321,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeDown.selector, new bytes(0))
         );
-        cheats.warp(block.timestamp + dfxCadc.POKE_WAIT_PERIOD() + 1 minutes);
+        cheats.warp(block.timestamp + dfxCadc.POKE_WAIT_PERIOD() + 1);
         sudo.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeDown.selector, new bytes(0))
@@ -344,7 +350,6 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
     }
 
     function testFail_dfxcadc_paused_burn() public {
-        test_dfxcadc_mint(100e18);
         test_dfxcadc_burn(1e18);
         sudo.call(
             address(dfxCadc),
@@ -370,5 +375,29 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
             abi.encodeWithSelector(dfxCadc.setPaused.selector, false)
         );
         test_dfxcadc_mint(100e18);
+    }
+
+    function test_dfxcadc_mint_burn_spotprice() public {
+        assertEq(dfx.balanceOf(address(this)), 0);
+        assertEq(cadc.balanceOf(address(this)), 0);
+
+        // Mint + burn one token w/o fees
+        test_dfxcadc_burn_no_fee(1e18);
+
+        // Now we go from
+        // DFX -> WETH -> USDC @ sushi
+        // USDC -> CADC @ dfx
+        // And see if we end up with 1 CADC
+        address[] memory path = new address[](3);
+        path[0] = Mainnet.DFX;
+        path[1] = Mainnet.WETH;
+        path[2] = Mainnet.USDC;
+        uint256 usdcOut = sushiRouter.getAmountsOut(dfx.balanceOf(address(this)), path)[2];
+        uint256 cadcOutFromDfx = dfxUsdcCadcA.viewOriginSwap(address(usdc), address(cadc), usdcOut);
+
+        uint256 totalCadcOut = cadcOutFromDfx + cadc.balanceOf(address(this));
+
+        assertLe(totalCadcOut, 1e18);
+        assertGt(totalCadcOut, 99e16);
     }
 }

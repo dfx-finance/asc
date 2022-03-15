@@ -11,7 +11,7 @@ import "../libraries/UniswapV2.sol";
 contract UniswapV2Oracle {
     using FixedPoint for *;
 
-    uint256 public immutable period;
+    uint256 public period;
 
     uint256 public price0CumulativeLast;
     uint256 public price1CumulativeLast;

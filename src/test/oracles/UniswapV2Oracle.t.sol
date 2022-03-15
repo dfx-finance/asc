@@ -27,7 +27,7 @@ contract UniswapV2OracleTest is DSTest {
         path[0] = Mainnet.WETH;
         path[1] = Mainnet.USDC;
 
-        cheats.warp(block.timestamp + 6 hours + 10 minutes);
+        cheats.warp(block.timestamp + univ2Oracle.period() + 1);
         IUniswapV2Router02(Mainnet.UNIV2_ROUTER).swapExactETHForTokens{
             value: 1e18
         }(0, path, address(this), block.timestamp + 1);
