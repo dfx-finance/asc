@@ -9,16 +9,21 @@ import DfxCadTwapArtifact from '../out/DfxCadTWAP.sol/DfxCadTWAP.json'
 import DfxCadcLogicArtifact from '../out/DfxCadcLogic.sol/DfxCadcLogic.json'
 import ASCUpgradableProxyArtifact from '../out/ASCUpgradableProxy.sol/ASCUpgradableProxy.json'
 
+// Access controller
+const DFX_GOV_MULTISIG = '0x27E843260c71443b4CC8cB6bF226C3f77b9695AF'
+const DFX_ACCESS_CONTROLLER_MULTISIG = '0xc9f05fa7049b32712c5d6675ebded167150475c4'
+const DFX_TREASURY_MULTISIG = '0x26f539A0fE189A7f228D7982BF10Bc294FA9070c'
+
 // Manages access control in twap
-const TWAP_ROLE_ADMIN = wallet.address
+const TWAP_ROLE_ADMIN = DFX_ACCESS_CONTROLLER_MULTISIG
 
 // Proxy admin is only used for upgrading proxy logic
-const DFX_CADC_PROXY_ADMIN = wallet.address
+const DFX_CADC_PROXY_ADMIN = DFX_GOV_MULTISIG
 
 const DFX_CADC_NAME = "dfxCADC"
 const DFX_CADC_SYMBOL = "DFXCADC"
-const DFX_CADC_ROLE_ADMIN = wallet.address // DFX_CADC_ADMIN is used to manage (all) roles
-const DFX_CADC_FEE_RECIPIENT = wallet.address
+const DFX_CADC_ROLE_ADMIN = DFX_ACCESS_CONTROLLER_MULTISIG // DFX_CADC_ADMIN is used to manage (all) roles
+const DFX_CADC_FEE_RECIPIENT = DFX_TREASURY_MULTISIG
 const DFX_CADC_MINT_BURN_FEE = parseUnits('0.005') // 0.5%
 const CADC_RATIO = parseUnits('0.95') // 95%
 const DFX_RATIO = parseUnits('0.05') // 5%
@@ -40,7 +45,10 @@ const main = async () => {
         name: 'DfxCadTWAP',
         deployer: wallet,
         factory: TwapFactory,
-        args: [TWAP_ROLE_ADMIN]
+        args: [TWAP_ROLE_ADMIN],
+        opts: {
+            gasLimit: 2017090
+        }
     })
 
     // 2. Deploy logic
@@ -48,7 +56,10 @@ const main = async () => {
         name: 'DfxCadcLogic',
         deployer: wallet,
         factory: LogicFactory,
-        args: []
+        args: [],
+        opts: {
+            gasLimit: 3040761
+        }
     })
 
     // 3. Deploy ASCUpgradableProxy with the encoded args
@@ -63,7 +74,10 @@ const main = async () => {
             dfxCadcLogic.address,
             DFX_CADC_PROXY_ADMIN,
             calldata
-        ]
+        ],
+        opts: {
+            gasLimit: 1667809
+        }
     })
 
     const output = {

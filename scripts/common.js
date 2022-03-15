@@ -42,7 +42,7 @@ const deployContract = async ({
   args,
   opts,
 }) => {
-  console.log(chalk.grey(`============ Contract ${name} ============`));
+  console.log(chalk.grey(`============ Contract ${name} @ ${process.env.RPC_URL} ============`));
 
   const balance = await deployer.getBalance();
   console.log(chalk.blueBright(`Deployer ${deployer.address} (balance: ${formatUnits(balance)} ETH)`));
@@ -81,19 +81,18 @@ const deployContract = async ({
     process.exit(0);
   }
 
-  const feeData = await provider.getFeeData()
-
-  let maxFeePerGas, maxPriorityFeePerGas;
+  const curBlock = await provider.getBlock()
+  let maxFeePerGas, maxPriorityFeePerGas
   if (opts && "maxFeePerGas" in opts) {
     maxFeePerGas = opts.maxFeePerGas;
   } else {
-    maxFeePerGas = feeData.maxFeePerGas.add(feeData.maxFeePerGas.mul(110).div(100))
+    maxFeePerGas = curBlock.baseFeePerGas.mul(110).div(100)
   }
 
   if (opts && "maxPriorityFee" in opts) {
     maxPriorityFeePerGas = opts.maxPriorityFee;
   } else {
-    maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
+    maxPriorityFeePerGas = ethers.utils.parseUnits('5', 9)
   }
 
   const spinner = ora(`Deploying ${name} with maxFeePerGas ${formatUnits(maxFeePerGas, 9)} gwei & maxPriorityFeePerGas ${formatUnits(maxPriorityFeePerGas, 9)}`).start();
