@@ -45,7 +45,7 @@ const deployContract = async ({
   console.log(chalk.grey(`============ Contract ${name} ============`));
 
   const balance = await deployer.getBalance();
-  console.log(chalk.blueBright(`Deployer balance: ${formatUnits(balance)} ETH`));
+  console.log(chalk.blueBright(`Deployer ${deployer.address} (balance: ${formatUnits(balance)} ETH)`));
 
   if (factory.interface.deploy.inputs) {
     if (factory.interface.deploy.inputs.length !== args.length) {
