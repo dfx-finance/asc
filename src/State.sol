@@ -18,13 +18,17 @@ contract State is
     bytes32 public constant SUDO_ROLE = keccak256("asc.role.sudo");
     bytes32 public constant SUDO_ROLE_ADMIN = keccak256("asc.role.sudo.admin");
 
+    // Poke role
+    bytes32 public constant POKE_ROLE = keccak256("asc.role.poke");
+    bytes32 public constant POKE_ROLE_ADMIN = keccak256("asc.role.poke.admin");
+
     // Market makers don't need to pay a mint/burn fee
     bytes32 public constant MARKET_MAKER_ROLE = keccak256("asc.role.mm");
     bytes32 public constant MARKET_MAKER_ROLE_ADMIN =
         keccak256("asc.role.mm.admin");
 
-    // Can only poke the contracts every 6 hours
-    uint256 public constant POKE_WAIT_PERIOD = 6 hours;
+    // Can only poke the contracts every 1 day
+    uint256 public constant POKE_WAIT_PERIOD = 1 days;
 
     /***** Variables *****/
 

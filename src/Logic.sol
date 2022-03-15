@@ -34,6 +34,10 @@ contract Logic is State {
         _setupRole(MARKET_MAKER_ROLE_ADMIN, _admin);
         _setupRole(MARKET_MAKER_ROLE, _admin);
 
+        _setRoleAdmin(POKE_ROLE, POKE_ROLE_ADMIN);
+        _setupRole(POKE_ROLE_ADMIN, _admin);
+        _setupRole(POKE_ROLE, _admin);
+
         underlying = _underlying;
         underlyingPerToken = _underlyingPerToken;
         pokeDelta = _pokeDelta;
@@ -78,7 +82,7 @@ contract Logic is State {
     ///         If set correctly, the underlying backing of the stable
     ///         assets will decrease and the underlying backing of the volatile
     ///         assets will increase.
-    function pokeUp() public onlyRole(SUDO_ROLE) updatePokeTime {
+    function pokeUp() public onlyRole(POKE_ROLE) updatePokeTime {
         for (uint256 i = 0; i < underlyingPerToken.length; i++) {
             underlyingPerToken[i] = uint256(
                 int256(underlyingPerToken[i]) + pokeDelta[i]
@@ -90,7 +94,7 @@ contract Logic is State {
     ///         If set correctly, the underlying backing of the stable
     ///         assets will increase and the underlying backing of the volatile
     ///         assets will decrease
-    function pokeDown() public onlyRole(SUDO_ROLE) updatePokeTime {
+    function pokeDown() public onlyRole(POKE_ROLE) updatePokeTime {
         for (uint256 i = 0; i < underlyingPerToken.length; i++) {
             underlyingPerToken[i] = uint256(
                 int256(underlyingPerToken[i]) - pokeDelta[i]
