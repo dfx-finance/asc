@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../lib/MockToken.sol";
 import "../lib/MockUser.sol";
+import "../lib/MockLogic.sol";
 import "../lib/Address.sol";
 import "../lib/CheatCodes.sol";
 
@@ -30,8 +31,11 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
 
     // Mock users so we can have many addresses
     MockUser admin;
-    MockUser sudo;
+    MockUser accessAdmin;
     MockUser feeCollector;
+    MockUser regularUser;
+
+    MockLogic ml;
 
     // Cheatcodes
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
@@ -51,8 +55,10 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
         IDfxCurve(0xa6C0CbCaebd93AD3C6c94412EC06aaA37870216d);
 
     function setUp() public {
+        ml = new MockLogic();
         admin = new MockUser();
-        sudo = new MockUser();
+        accessAdmin = new MockUser();
+        regularUser = new MockUser();
         feeCollector = new MockUser();
 
         twap = new DfxCadTWAP(address(this));
@@ -64,7 +70,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
             DfxCadcLogic.initialize.selector,
             "Coin",
             "COIN",
-            address(sudo),
+            address(accessAdmin),
             address(feeCollector),
             MINT_BURN_FEE,
             address(twap),
@@ -102,7 +108,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
                 DfxCadcLogic.initialize.selector,
                 "Coin",
                 "COIN",
-                address(sudo),
+                address(accessAdmin),
                 address(feeCollector),
                 MINT_BURN_FEE,
                 address(twap),
@@ -119,8 +125,8 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
         assertEq(dfxCadc.totalSupply(), 0);
 
         assertEq(upgradeableProxy.getAdmin(), address(admin));
-        assertTrue(dfxCadc.hasRole(dfxCadc.SUDO_ROLE(), address(sudo)));
-        assertTrue(dfxCadc.hasRole(dfxCadc.MARKET_MAKER_ROLE(), address(sudo)));
+        assertTrue(dfxCadc.hasRole(dfxCadc.SUDO_ROLE(), address(accessAdmin)));
+        assertTrue(dfxCadc.hasRole(dfxCadc.MARKET_MAKER_ROLE(), address(accessAdmin)));
     }
 
     function test_dfxcadc_access_control() public {
@@ -129,7 +135,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
         assertTrue(
             !dfxCadc.hasRole(dfxCadc.MARKET_MAKER_ROLE(), address(newUser))
         );
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(
                 dfxCadc.grantRole.selector,
@@ -142,7 +148,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
         );
 
         assertTrue(!dfxCadc.hasRole(dfxCadc.SUDO_ROLE(), address(newUser)));
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(
                 dfxCadc.grantRole.selector,
@@ -151,6 +157,72 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
             )
         );
         assertTrue(dfxCadc.hasRole(dfxCadc.SUDO_ROLE(), address(newUser)));
+    }
+
+    function testFail_dfxcadc_access_pokedelta() public {
+        regularUser.call(
+            address(dfxCadc),
+            abi.encodeWithSelector(dfxCadc.setPokeDelta.selector, 1e15)
+        );
+    }
+
+    function testFail_dfxcadc_access_pokeUp() public {
+        regularUser.call(
+            address(dfxCadc),
+            abi.encodeWithSelector(dfxCadc.pokeUp.selector)
+        );
+    }
+
+    function testFail_dfxcadc_access_pokeDown() public {
+        regularUser.call(
+            address(dfxCadc),
+            abi.encodeWithSelector(dfxCadc.pokeDown.selector)
+        );
+    }
+
+    function testFail_dfxcadc_access_setdfxcadtwap() public {
+        regularUser.call(
+            address(dfxCadc),
+            abi.encodeWithSelector(dfxCadc.setDfxCadTwap.selector, address(0))
+        );
+    }
+
+    function testFail_dfxcadc_access_recoverERC20() public {
+        regularUser.call(
+            address(dfxCadc),
+            abi.encodeWithSelector(dfxCadc.recoverERC20.selector, Mainnet.DAI)
+        );
+    }
+
+    function testFail_dfxcadc_access_execute() public {
+        regularUser.call(
+            address(dfxCadc),
+            abi.encodeWithSelector(
+                dfxCadc.execute.selector,
+                address(ml),
+                abi.encodeWithSelector(ml.doSomething.selector)
+            )
+        );
+    }
+
+    function test_dfxcadc_access_execute() public {
+        accessAdmin.call(
+            address(dfxCadc),
+            abi.encodeWithSelector(
+                dfxCadc.grantRole.selector,
+                dfxCadc.CR_DEFENDER(),
+                address(regularUser)
+            )
+        );
+
+        regularUser.call(
+            address(dfxCadc),
+            abi.encodeWithSelector(
+                dfxCadc.execute.selector,
+                address(ml),
+                abi.encodeWithSelector(ml.doSomething.selector)
+            )
+        );
     }
 
     function test_dfxcadc_get_underlyings() public {
@@ -186,7 +258,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
         cheats.assume(lpAmount > 1e6);
         cheats.assume(lpAmount < 1_000_000_000e18);
 
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(
                 dfxCadc.grantRole.selector,
@@ -208,7 +280,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
 
     function test_dfxcadc_burn(uint256 lpAmount) public {
         test_dfxcadc_mint_no_fees(lpAmount);
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(
                 dfxCadc.revokeRole.selector,
@@ -250,7 +322,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
         (uint256 cadcAmount0, uint256 dfxAmount0) = dfxCadc.getUnderlyings(
             1e18
         );
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeUp.selector, new bytes(0))
         );
@@ -275,7 +347,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
         (uint256 cadcAmount0, uint256 dfxAmount0) = dfxCadc.getUnderlyings(
             1e18
         );
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeDown.selector, new bytes(0))
         );
@@ -294,46 +366,46 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
     }
 
     function test_dfxcadc_poke_up_2() public {
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeUp.selector, new bytes(0))
         );
         cheats.warp(block.timestamp + dfxCadc.POKE_WAIT_PERIOD() + 1);
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeUp.selector, new bytes(0))
         );
     }
 
     function testFail_dfxcadc_poke_up_2() public {
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeUp.selector, new bytes(0))
         );
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeUp.selector, new bytes(0))
         );
     }
 
     function test_dfxcadc_poke_down_2() public {
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeDown.selector, new bytes(0))
         );
         cheats.warp(block.timestamp + dfxCadc.POKE_WAIT_PERIOD() + 1);
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeDown.selector, new bytes(0))
         );
     }
 
     function testFail_dfxcadc_poke_down_2() public {
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeDown.selector, new bytes(0))
         );
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.pokeDown.selector, new bytes(0))
         );
@@ -341,7 +413,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
 
     function testFail_dfxcadc_paused_mint() public {
         test_dfxcadc_mint(100e18);
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.setPaused.selector, true)
         );
@@ -351,7 +423,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
 
     function testFail_dfxcadc_paused_burn() public {
         test_dfxcadc_burn(1e18);
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.setPaused.selector, true)
         );
@@ -361,7 +433,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
 
     function test_dfxcadc_unpause() public {
         // Contract can be unpaused
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.setPaused.selector, true)
         );
@@ -370,7 +442,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
         dfxCadc.mint(100e18);
 
         // unpause and try again
-        sudo.call(
+        accessAdmin.call(
             address(dfxCadc),
             abi.encodeWithSelector(dfxCadc.setPaused.selector, false)
         );
@@ -392,8 +464,15 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
         path[0] = Mainnet.DFX;
         path[1] = Mainnet.WETH;
         path[2] = Mainnet.USDC;
-        uint256 usdcOut = sushiRouter.getAmountsOut(dfx.balanceOf(address(this)), path)[2];
-        uint256 cadcOutFromDfx = dfxUsdcCadcA.viewOriginSwap(address(usdc), address(cadc), usdcOut);
+        uint256 usdcOut = sushiRouter.getAmountsOut(
+            dfx.balanceOf(address(this)),
+            path
+        )[2];
+        uint256 cadcOutFromDfx = dfxUsdcCadcA.viewOriginSwap(
+            address(usdc),
+            address(cadc),
+            usdcOut
+        );
 
         uint256 totalCadcOut = cadcOutFromDfx + cadc.balanceOf(address(this));
 

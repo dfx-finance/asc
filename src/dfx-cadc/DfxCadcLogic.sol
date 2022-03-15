@@ -45,6 +45,10 @@ contract DfxCadcLogic is DfxCadcState {
         _setupRole(POKE_ROLE_ADMIN, _admin);
         _setupRole(POKE_ROLE, _admin);
 
+        _setRoleAdmin(CR_DEFENDER, CR_DEFENDER_ADMIN);
+        _setupRole(CR_DEFENDER_ADMIN, _admin);
+        _setupRole(CR_DEFENDER, _admin);
+
         // Oracle address
         dfxCadTwap = _dfxCadTwap;
 
@@ -150,6 +154,42 @@ contract DfxCadcLogic is DfxCadcState {
             _pause();
         } else {
             _unpause();
+        }
+    }
+
+    /// @notice Execute functionality used to perform buyback and recollateralization
+    function execute(address _target, bytes memory _data)
+        public
+        onlyRole(CR_DEFENDER)
+        returns (bytes memory response)
+    {
+        require(_target != address(0), "target-address-required");
+
+        // call contract in current context
+        assembly {
+            let succeeded := delegatecall(
+                sub(gas(), 5000),
+                _target,
+                add(_data, 0x20),
+                mload(_data),
+                0,
+                0
+            )
+            let size := returndatasize()
+
+            response := mload(0x40)
+            mstore(
+                0x40,
+                add(response, and(add(add(size, 0x20), 0x1f), not(0x1f)))
+            )
+            mstore(response, size)
+            returndatacopy(add(response, 0x20), 0, size)
+
+            switch iszero(succeeded)
+            case 1 {
+                // throw if delegatecall failed
+                revert(add(response, 0x20), size)
+            }
         }
     }
 

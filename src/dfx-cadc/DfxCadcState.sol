@@ -26,6 +26,10 @@ contract DfxCadcState is
     bytes32 public constant MARKET_MAKER_ROLE = keccak256("dfxcadc.role.mm");
     bytes32 public constant MARKET_MAKER_ROLE_ADMIN =
         keccak256("dfxcadc.role.mm.admin");
+    
+    // Collateral defenders to perform buyback and recollateralization
+    bytes32 public constant CR_DEFENDER = keccak256("dfxcadc.role.cr-defender");
+    bytes32 public constant CR_DEFENDER_ADMIN = keccak256("dfxcadc.role.cr-defender.admin");
 
     // Can only poke the contracts every day
     uint256 public constant POKE_WAIT_PERIOD = 1 days;
