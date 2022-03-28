@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/AccessControlUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/token/ERC20/ERC20Upgradeable.sol";
+import "./ERC20Upgradeable.sol";
 
 contract DfxCadcState is
     AccessControlUpgradeable,
