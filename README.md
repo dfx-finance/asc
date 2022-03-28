@@ -12,6 +12,19 @@ forge test -vvv
 forge test -f http://127.0.0.1:8545 -vvv
 ```
 
+## Installation
+
+Clone using the `--recursive` flag so it fetches the submodules:
+
+```bash
+git clone --recursive git@github.com:dfx-finance/asc.git
+```
+
+Or run this after regular cloning:
+
+```bash
+git submodule update --init
+```
 
 ## Deployment
 
