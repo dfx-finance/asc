@@ -9,6 +9,11 @@ library Mainnet {
     address public constant DFX = 0x888888435FDe8e7d4c54cAb67f206e4199454c60;
     address public constant CADC = 0xcaDC0acd4B445166f12d2C07EAc6E2544FbE2Eef;
 
+    address public constant DFX_CAD = 0xFE32747d0251BA92bcb80b6D16C8257eCF25AB1C;
+    address public constant DFX_CAD_GOV = 0x27E843260c71443b4CC8cB6bF226C3f77b9695AF;
+    address public constant DFX_CAD_ACCESS_CONTROLLER = 0xc9F05FA7049b32712c5D6675eBDEd167150475c4;
+    address public constant DFX_CAD_TREASURY = 0x26f539A0fE189A7f228D7982BF10Bc294FA9070c;
+
     // Oracles
 
     // 8-decimals

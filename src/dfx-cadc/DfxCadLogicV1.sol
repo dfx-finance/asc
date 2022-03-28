@@ -10,26 +10,16 @@ import "./DfxCadcState.sol";
 
 import "../libraries/FullMath.sol";
 
-contract DfxCadcLogic is DfxCadcState {
+contract DfxCadLogicV1 is DfxCadcState {
     using SafeERC20 for IERC20;
 
     // **** Initializing functions ****
 
     // We don't need the old initialize logic as the state has
     // already been set, this is just to change the name + symbol
-    function initialize(
-        string memory _name,
-        string memory _symbol,
-        address _admin,
-        address _feeRecipient,
-        uint256 _mintBurnFee,
-        address _dfxCadTwap,
-        uint256 _cadcRatio,
-        uint256 _dfxRatio,
-        uint256 _pokeRatioDelta
-    ) public initializer {
+    function initialize() public {
         // Don't initialize twice
-        require(keccak256(bytes(name())) == keccak256(bytes("dfxCADC")));
+        require(keccak256(bytes(name())) == keccak256(bytes("dfxCADC")), "no-reinit");
 
         // Assign new name and symbol
         _name = "dfxCAD";
