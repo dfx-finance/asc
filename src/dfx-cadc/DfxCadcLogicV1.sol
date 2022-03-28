@@ -15,8 +15,8 @@ contract DfxCadcLogic is DfxCadcState {
 
     // **** Initializing functions ****
 
-    // We don't need to check twice if the contract's initialized as
-    // __ERC20_init does that check
+    // We don't need the old initialize logic as the state has
+    // already been set, this is just to change the name + symbol
     function initialize(
         string memory _name,
         string memory _symbol,
@@ -28,45 +28,12 @@ contract DfxCadcLogic is DfxCadcState {
         uint256 _dfxRatio,
         uint256 _pokeRatioDelta
     ) public initializer {
-        __AccessControl_init();
-        __ERC20_init(_name, _symbol);
-        __Pausable_init();
-        __ReentrancyGuard_init();
+        // Don't initialize twice
+        require(keccak256(bytes(name())) == keccak256(bytes("dfxCADC")));
 
-        _setRoleAdmin(SUDO_ROLE, SUDO_ROLE_ADMIN);
-        _setupRole(SUDO_ROLE_ADMIN, _admin);
-        _setupRole(SUDO_ROLE, _admin);
-
-        _setRoleAdmin(MARKET_MAKER_ROLE, MARKET_MAKER_ROLE_ADMIN);
-        _setupRole(MARKET_MAKER_ROLE_ADMIN, _admin);
-        _setupRole(MARKET_MAKER_ROLE, _admin);
-
-        _setRoleAdmin(POKE_ROLE, POKE_ROLE_ADMIN);
-        _setupRole(POKE_ROLE_ADMIN, _admin);
-        _setupRole(POKE_ROLE, _admin);
-
-        _setRoleAdmin(CR_DEFENDER, CR_DEFENDER_ADMIN);
-        _setupRole(CR_DEFENDER_ADMIN, _admin);
-        _setupRole(CR_DEFENDER, _admin);
-
-        // Oracle address
-        dfxCadTwap = _dfxCadTwap;
-
-        // Initial ratios
-        require(_dfxRatio + _cadcRatio == 1e18, "invalid-ratio");
-        cadcRatio = _cadcRatio;
-        dfxRatio = _dfxRatio;
-
-        // Poke ratio delta
-        require(
-            _pokeRatioDelta <= MAX_POKE_RATIO_DELTA,
-            "poke-ratio-delta: too big"
-        );
-        pokeRatioDelta = _pokeRatioDelta;
-
-        // Fee recipients
-        feeRecipient = _feeRecipient;
-        mintBurnFee = _mintBurnFee;
+        // Assign new name and symbol
+        _name = "dfxCAD";
+        _symbol = "dfxCAD";
     }
 
     // **** Modifiers ****
