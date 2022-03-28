@@ -476,7 +476,7 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
 
         uint256 totalCadcOut = cadcOutFromDfx + cadc.balanceOf(address(this));
 
-        assertLe(totalCadcOut, 1e18);
+        assertGe(totalCadcOut, 1e18);
         assertGt(totalCadcOut, 99e16);
     }
 }
