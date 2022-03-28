@@ -32,3 +32,10 @@ node v16.13.0
 
 node --experimental-json-modules scripts/01-deploy-dfxcadc.js
 ```
+
+## Verification
+
+```bash
+# export ETHERSCAN_API_KEY=AH56YE6FZWX7QHMR6JFV3FGHCNWCXCVKCV
+forge verify-contract --compiler-version v0.8.12+commit.f00d7308 [CONTRACT ADDRESS] --constructor-args <ARGS> --num-of-optimizations 200 [CONTRACT_PATH:CONTRACT_NAME] [ETHERSCAN_API_KEY]
+```
