@@ -3,10 +3,10 @@
 
 pragma solidity ^0.8.0;
 
-import "./IERC20Upgradeable.sol";
-import "./extensions/IERC20MetadataUpgradeable.sol";
-import "../../utils/ContextUpgradeable.sol";
-import "../../proxy/utils/Initializable.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/utils/ContextUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -40,8 +40,8 @@ contract ERC20Upgradeable is Initializable, ContextUpgradeable, IERC20Upgradeabl
 
     uint256 private _totalSupply;
 
-    string private _name;
-    string private _symbol;
+    string internal _name;
+    string internal _symbol;
 
     /**
      * @dev Sets the values for {name} and {symbol}.
