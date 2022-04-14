@@ -20,14 +20,13 @@ import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./ERC20Upgradeable.sol";
 
+
 contract MUNIState is
     OwnableUpgradeable,
     ERC20Upgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable
-{
-    /***** Constants *****/
-    
+{    
     /***** Variables *****/
 
     /* !!!! Important !!!! */
@@ -48,7 +47,10 @@ contract MUNIState is
     int24 public lowerTick;
     int24 public upperTick;
 
-    // IUniswapV3Pool public immutable pool;
-    // IERC20 public immutable token0;
-    // IERC20 public immutable token1;
+    IUniswapV3Pool public pool;
+    IERC20 public token0;
+    IERC20 public token1;
+
+    // Re-initialization guard
+    bool isInitialized;
 }
