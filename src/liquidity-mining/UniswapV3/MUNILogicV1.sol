@@ -52,7 +52,12 @@ contract MUNILogicV1 is MUNIState {
         string memory _name,
         string memory _symbol        
     ) public initializer {
-        // _transferOwnership(_owner);
+        __Ownable_init();
+        __ERC20_init(_name, _symbol);
+        __Pausable_init();
+        __ReentrancyGuard_init();
+
+        _transferOwnership(_owner);
 
         // pool = IUniswapV3Pool(_pool);
         // token0 = IERC20(pool.token0());

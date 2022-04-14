@@ -17,21 +17,17 @@ import "../../interfaces/IUniswapV3.sol";
 
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./ERC20Upgradeable.sol";
 
 contract MUNIState is
-    AccessControlUpgradeable,
+    OwnableUpgradeable,
     ERC20Upgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable
 {
     /***** Constants *****/
-
-    // Super user role
-    bytes32 public constant SUDO_ROLE = keccak256("muni.role.sudo");
-    bytes32 public constant SUDO_ROLE_ADMIN = keccak256("muni.role.sudo.admin");
-
+    
     /***** Variables *****/
 
     /* !!!! Important !!!! */
