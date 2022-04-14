@@ -10,7 +10,7 @@ import "../../ASCUpgradableProxy.sol";
 
 
 
-contract DfxCadcLogicTest is DSTest {
+contract DemoProxyTest is DSTest {
     // Did it this way to obtain interface, as per dfxCAD tests
     DemoLogic proxiedLogic;    
     
