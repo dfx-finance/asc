@@ -9,6 +9,7 @@ import "../../../ASCUpgradableProxy.sol";
 import "../../lib/Address.sol";
 import "../../lib/CheatCodes.sol";
 import "../../lib/MockToken.sol";
+import "../../lib/MockUser.sol";
 
 import "../../../libraries/Babylonian.sol";
 import "../../../libraries/TickMath.sol";
@@ -26,11 +27,32 @@ contract MUNITest is DSTest, stdCheats {
 
     ASCUpgradableProxy upgradeableProxy = ASCUpgradableProxy(payable(Mainnet.DFX_CAD_CADC_MUNI));
 
+    // Mock tokens used for MUNI LP pair
+    MockToken token0;
+    MockToken token1;
+
+    // Mock contract users
+    MockUser admin;
+
     // Cheatcodes
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
 
     function setUp() public {
+        admin = new MockUser();
+        token0 = new MockToken();
+        token1 = new MockToken();
+
         muniLogic = new MUNILogicV1();
+        bytes memory callargs = abi.encodeWithSelector(
+            muniLogic.initialize.selector
+        );
+
+        upgradeableProxy = new ASCUpgradableProxy(
+            address(muniLogic),
+            address(admin),
+            callargs
+        );
+
         muni = MUNILogicV1(Mainnet.DFX_CAD_CADC_MUNI);
     }
 
