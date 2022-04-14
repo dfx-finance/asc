@@ -18,7 +18,7 @@ import "../../interfaces/IUniswapV3.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import "./ERC20Upgradeable.sol";
+import "../../common/ERC20Upgradeable.sol";
 
 
 contract MUNIState is
