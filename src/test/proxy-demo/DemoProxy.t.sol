@@ -35,11 +35,6 @@ contract DfxCadcLogicTest is DSTest {
         proxiedLogic = DemoLogic(address(upgradeableProxy));
     }
 
-    // First naive example
-    function test_demoproxy_points_to_contract() public {
-        assertEq(proxy.implementation(), address(logic));
-    }
-
     // Using Kendrick's UpgradableProxy wrapper
     function test_demoproxy_calls_to_implementation_contract() public {
         assertEq(proxiedLogic.getMagicNumber(), 0x42);
