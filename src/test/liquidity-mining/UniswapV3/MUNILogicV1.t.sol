@@ -19,9 +19,8 @@ import "../../../libraries/FixedPoint.sol";
 import "../../../interfaces/IUniswapV3.sol";
 
 import "../../../liquidity-mining/UniswapV3/MUNILogicV1.sol";
-import "./MUNINewLogic.sol";
 
-contract UpgradeableMUNITest is DSTest, stdCheats {
+contract MUNILogicV1Test is DSTest, stdCheats {
     using FixedPoint for FixedPoint.uq112x112;
     using FixedPoint for FixedPoint.uq144x112;
 
@@ -30,10 +29,6 @@ contract UpgradeableMUNITest is DSTest, stdCheats {
     // Did it this way to obtain interface, as per dfxCAD tests
     MUNILogicV1 proxiedMuniLogic;
     MUNILogicV1 muniLogic;
-
-    // New logic
-    MUNINewLogic proxiedMuniNewLogic;
-    MUNINewLogic muniNewLogic;
 
     // Mock tokens to be used as UniV3 liquidity pair
     MockToken token0;
@@ -277,28 +272,5 @@ contract UpgradeableMUNITest is DSTest, stdCheats {
 
         assertTrue(delta0 > 99e16 && delta0 <= 1e18);
         assertTrue(delta1 > 99e16 && delta1 <= 1e18);
-    }
-
-    function test_muniproxy_upgradability() public {
-        // Deploy new logic
-        muniNewLogic = new MUNINewLogic();
-
-        // Point to new logic contract
-        cheats.prank(address(admin));
-        upgradeableProxy.upgradeTo(address(muniNewLogic));
-
-        // Wrap new logic around the proxy
-        proxiedMuniNewLogic = MUNINewLogic(address(upgradeableProxy));
-
-        // Old state
-        assertEq(proxiedMuniNewLogic.name(), "MUNI");
-        assertEq(proxiedMuniNewLogic.symbol(), "MUNI");
-        assertEq(proxiedMuniNewLogic.owner(), address(this));
-        assertEq(address(proxiedMuniNewLogic.pool()), address(pool));
-        
-        // New function
-        // Calling new function through new logic
-        string memory newLogicMessage = proxiedMuniNewLogic.newLogic();
-        assertEq(newLogicMessage, "new logic here");
     }
 }
