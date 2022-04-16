@@ -14,7 +14,7 @@ import "../../lib/MockUser.sol";
 import "../../../libraries/FixedPoint.sol";
 
 import "../../../liquidity-mining/UniswapV3/MUNILogicV1.sol";
-import "../../../liquidity-mining/UniswapV3/MUNINewLogic.sol";
+import "./MUNINewLogic.sol";
 
 
 contract MUNINewLogicTest is DSTest, stdCheats {
