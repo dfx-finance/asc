@@ -64,22 +64,17 @@ contract MUNILogicV1 is MUNIState {
     /// note that the 3 above params are NOT UPDATEABLE AFTER INITIALIZATION
     /// @param _lowerTick initial lowerTick (only changeable with executiveRebalance)
     /// @param _upperTick initial upperTick (only changeable with executiveRebalance)
-    /// @param _name name of MUNI
-    /// @param _symbol symbol of MUNI token
     function initialize(
         address _owner,
         address _pool,
         uint16 _managerFeeBPS,
         int24 _lowerTick,
-        int24 _upperTick,
-        string memory _name,
-        string memory _symbol        
+        int24 _upperTick
     ) public initializer {
         // Don't initialize twice
         require(!isInitialized, "Contract already initialized");
 
         __Ownable_init();
-        __ERC20_init(_name, _symbol);
         __Pausable_init();
         __ReentrancyGuard_init();
 

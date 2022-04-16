@@ -110,9 +110,7 @@ contract MUNINewLogicTest is DSTest, stdCheats {
             address(pool),
             200, // 2% fee
             lowerTick,
-            upperTick,
-            "MUNI",
-            "MUNI"
+            upperTick
         );
         upgradeableProxy = new ASCUpgradableProxy(
             address(muniLogic),
@@ -133,8 +131,6 @@ contract MUNINewLogicTest is DSTest, stdCheats {
         newProxiedMuniLogic = MUNINewLogic(address(upgradeableProxy));
 
         // Old state
-        assertEq(newProxiedMuniLogic.name(), "MUNI");
-        assertEq(newProxiedMuniLogic.symbol(), "MUNI");
         assertEq(newProxiedMuniLogic.owner(), address(this));
         assertEq(address(newProxiedMuniLogic.pool()), address(pool));
         
