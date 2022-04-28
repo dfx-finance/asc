@@ -50,8 +50,26 @@ contract StakingRewardsTest is DSTest {
         stakingRewards.recoverERC20(address(stakingToken), 100e18);
     }
 
-    function test_recover_token() public {
+    function test_recover_reward_token() public {
         cheats.prank(address(this));
         stakingRewards.recoverERC20(address(rewardToken), 100e18);
+    }
+
+    function testFail_staking_while_paused() public {
+        cheats.prank(address(this));
+        stakingRewards.setPaused(true);
+        assertTrue(stakingRewards.paused());
+
+        stakingToken.mint(address(user1), 100e18);
+        cheats.prank(address(user1));
+        stakingRewards.stake(100e18);
+    }
+
+    function test_staking_while_not_paused() public {
+        assertTrue(!stakingRewards.paused());
+
+        stakingToken.mint(address(user1), 100e18);
+        cheats.prank(address(user1));
+        stakingRewards.stake(100e18);
     }
 }
