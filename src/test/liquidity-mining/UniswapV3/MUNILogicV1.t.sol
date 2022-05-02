@@ -115,9 +115,7 @@ contract MUNILogicV1Test is DSTest, stdCheats {
             address(pool),
             200, // 2% fee
             lowerTick,
-            upperTick,
-            "MUNI",
-            "MUNI"
+            upperTick
         );
 
         upgradeableProxy = new ASCUpgradableProxy(

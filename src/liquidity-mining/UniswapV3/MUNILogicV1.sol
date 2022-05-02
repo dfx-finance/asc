@@ -55,9 +55,6 @@ contract MUNILogicV1 is MUNIState {
 
     // **** Initializing functions ****
 
-    // We don't need to check twice if the contract's initialized as
-    // __ERC20_init does that check
-
     /// @param _owner address of Uniswap V3 pool
     /// @param _pool address of Uniswap V3 pool
     /// @param _managerFeeBPS proportion of fees earned that go to manager treasury
