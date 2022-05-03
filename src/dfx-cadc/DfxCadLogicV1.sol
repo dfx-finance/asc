@@ -60,7 +60,6 @@ contract DfxCadLogicV1 is DfxCadcState {
             "poke-ratio-delta: too big"
         );
         pokeRatioDelta = _pokeRatioDelta;
-        emit PokeDeltaSet(pokeRatioDelta);
     }
 
     /// @notice Used when market price / TWAP is > than backing.
@@ -70,7 +69,6 @@ contract DfxCadLogicV1 is DfxCadcState {
     function pokeUp() public onlyRole(POKE_ROLE) updatePokes {
         dfxRatio = dfxRatio + pokeRatioDelta;
         cadcRatio = cadcRatio - pokeRatioDelta;
-        emit PokeUp(dfxRatio, cadcRatio);
     }
 
     /// @notice Used when market price / TWAP is < than backing.
@@ -80,19 +78,16 @@ contract DfxCadLogicV1 is DfxCadcState {
     function pokeDown() public onlyRole(POKE_ROLE) updatePokes {
         dfxRatio = dfxRatio - pokeRatioDelta;
         cadcRatio = cadcRatio + pokeRatioDelta;
-        emit PokeDown(dfxRatio, cadcRatio);
     }
 
     /// @notice Sets the TWAP address
     function setDfxCadTwap(address _dfxCadTwap) public onlyRole(SUDO_ROLE) {
         dfxCadTwap = _dfxCadTwap;
-        emit DfxCadTwapSet(_dfxCadTwap);
     }
 
     /// @notice Sets the fee recipient for mint/burn
     function setFeeRecipient(address _recipient) public onlyRole(SUDO_ROLE) {
         feeRecipient = _recipient;
-        emit FeeRecipientSet(_recipient);
     }
 
     /// @notice In case anyone sends tokens to the wrong address
@@ -102,14 +97,12 @@ contract DfxCadLogicV1 is DfxCadcState {
             msg.sender,
             IERC20(_a).balanceOf(address(this))
         );
-        emit ERC20Recovered(_a);
     }
 
     /// @notice Sets mint/burn fee
     function setMintBurnFee(uint256 _f) public onlyRole(SUDO_ROLE) {
         require(_f < 1e18, "invalid-fee");
         mintBurnFee = _f;
-        emit MintBurnFeeSet(_f);
     }
 
     /// @notice Emergency trigger
@@ -155,7 +148,6 @@ contract DfxCadLogicV1 is DfxCadcState {
                 revert(add(response, 0x20), size)
             }
         }
-        emit Executed(_target);
     }
 
     // **** Public stateful functions ****
@@ -216,14 +208,4 @@ contract DfxCadLogicV1 is DfxCadcState {
         dfxAmount = FullMath.mulDivRoundingUp(_amount, dfxRatio, 1e18);
         dfxAmount = FullMath.mulDivRoundingUp(dfxAmount, 1e18, cadPerDfx);
     }
-
-    /* ========== EVENTS ========== */
-    event Executed(address user);
-    event MintBurnFeeSet(uint256 fee);
-    event ERC20Recovered(address user);
-    event FeeRecipientSet(address user);
-    event DfxCadTwapSet(address twap);
-    event PokeDown(uint256 dfxRatio, uint256 cadcRatio);
-    event PokeUp(uint256 dfxRatio, uint256 cadcRatio);
-    event PokeDeltaSet(uint256 pokeRatioDelta);
 }

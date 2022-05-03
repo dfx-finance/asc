@@ -40,13 +40,11 @@ contract DfxCadTWAP is AccessControl, UniswapV2Oracle, IDfxOracle {
     /// @notice Reads the price feed and updates internal TWAP state
     function update() public override onlyRole(SUDO) {
         super.update();
-        emit Updated(price0CumulativeLast, price1CumulativeLast, blockTimestampLast);
     }
 
     /// @notice Changes the TWAP period
     function setPeriod(uint256 _period) public onlyRole(SUDO) {
         period = _period;
-        emit PeriodSet(period);
     }
 
     // **** Public functions **** //
@@ -71,8 +69,4 @@ contract DfxCadTWAP is AccessControl, UniswapV2Oracle, IDfxOracle {
 
         return cadPerDfx;
     }
-
-    /* ========== EVENTS ========== */
-    event Updated(uint256 price0CumulativeLast, uint256 price1CumulativeLast, uint32 blockTimestampLast);
-    event PeriodSet(uint256 period);
 }
