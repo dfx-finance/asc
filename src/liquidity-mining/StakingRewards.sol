@@ -166,6 +166,12 @@ contract StakingRewards is Ownable, ReentrancyGuard, Pausable {
         rewardsDuration = _rewardsDuration;
         emit RewardsDurationUpdated(rewardsDuration);
     }
+	
+    function setPaused(bool _paused) external onlyOwner {
+        _paused
+        ? _pause()
+        : _unpause();
+    }
 
     /* ========== MODIFIERS ========== */
 
