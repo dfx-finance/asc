@@ -153,6 +153,7 @@ contract StakingRewards is Ownable, ReentrancyGuard, Pausable {
         external
         onlyOwner
     {
+        require(tokenAddress != address(stakingToken), "Cannot withdraw the staking token");
         IERC20(tokenAddress).safeTransfer(msg.sender, tokenAmount);
         emit Recovered(tokenAddress, tokenAmount);
     }
@@ -164,6 +165,12 @@ contract StakingRewards is Ownable, ReentrancyGuard, Pausable {
         );
         rewardsDuration = _rewardsDuration;
         emit RewardsDurationUpdated(rewardsDuration);
+    }
+	
+    function setPaused(bool _paused) external onlyOwner {
+        _paused
+        ? _pause()
+        : _unpause();
     }
 
     /* ========== MODIFIERS ========== */
