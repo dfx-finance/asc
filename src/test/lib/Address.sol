@@ -19,6 +19,9 @@ library Mainnet {
     // 8-decimals
     address public constant CHAINLINK_WETH_USD = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
 
+    // Managed Uniswap
+    address public constant DFX_CAD_CADC_MUNI = 0x0000000000000000000000000000000000000000;
+
     // Addresses
     address public constant UNIV2_FACTORY = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
     address public constant UNIV2_ROUTER = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
