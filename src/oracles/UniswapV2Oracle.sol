@@ -57,14 +57,14 @@ contract UniswapV2Oracle {
             uint256 price1Cumulative,
             uint32 blockTimestamp
         ) = UniswapV2OracleLibrary.currentCumulativePrices(address(pair));
-        uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
+        unchecked { 
+            uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
 
-        // ensure that at least one full period has passed since the last update
-        require(timeElapsed >= period, "UNIV2ORACLE: PERIOD_NOT_ELAPSED");
+            // ensure that at least one full period has passed since the last update
+            require(timeElapsed >= period, "UNIV2ORACLE: PERIOD_NOT_ELAPSED");
 
-        // overflow is desired, casting never truncates
-        // cumulative price is in (uq112x112 price * seconds) units so we simply wrap it after division by time elapsed
-        unchecked {
+            // overflow is desired, casting never truncates
+            // cumulative price is in (uq112x112 price * seconds) units so we simply wrap it after division by time elapsed
             price0Average = FixedPoint.uq112x112(
                 uint224((price0Cumulative - price0CumulativeLast) / timeElapsed)
             );
