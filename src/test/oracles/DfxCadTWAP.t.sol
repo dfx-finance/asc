@@ -35,7 +35,7 @@ contract DfxCadTWAPTest is DSTest, stdCheats {
 
     function test_dfxcadtwap() public {
         uint256 cadcPerDfx = twap.read();
-        assertEq(cadcPerDfx, 0);
+        assertGt(cadcPerDfx, 0);
 
         cheats.warp(block.timestamp + twap.period() + 1);
         twap.update();
@@ -71,7 +71,6 @@ contract DfxCadTWAPTest is DSTest, stdCheats {
         );
 
         uint256 spotCadcPerDfx = cadc.balanceOf(address(this)) - _before;
-
         uint256 deltaPercentage = cadcPerDfx > spotCadcPerDfx
             ? (spotCadcPerDfx * 1e18) / cadcPerDfx
             : (cadcPerDfx * 1e18) / spotCadcPerDfx;
