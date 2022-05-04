@@ -24,7 +24,6 @@ contract UniswapV2Oracle {
     address public immutable token0;
     address public immutable token1;
 
-
     constructor(
         address factory,
         address tokenA,
@@ -43,8 +42,7 @@ contract UniswapV2Oracle {
         price0CumulativeLast = pair.price0CumulativeLast();
         price1CumulativeLast = pair.price1CumulativeLast();
         
-        (uint112 reserve0,,) = pair.getReserves();
-        (,uint112 reserve1,) = pair.getReserves();
+        (uint112 reserve0,uint112 reserve1,) = pair.getReserves();
         
         price0Average = FixedPoint.fraction(reserve1, reserve0);
         price1Average = FixedPoint.fraction(reserve0, reserve1);
