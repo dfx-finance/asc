@@ -42,11 +42,11 @@ contract UniswapV2Oracle {
         price0CumulativeLast = pair.price0CumulativeLast();
         price1CumulativeLast = pair.price1CumulativeLast();
         
-        price0Average = FixedPoint.uq112x112(uint224(pair.price0CumulativeLast()));
-        price1Average = FixedPoint.uq112x112(uint224(pair.price1CumulativeLast()));
+        (uint112 reserve0,uint112 reserve1,) = pair.getReserves();
+        
+        price0Average = FixedPoint.fraction(reserve1, reserve0);
+        price1Average = FixedPoint.fraction(reserve0, reserve1);
 
-        uint112 reserve0;
-        uint112 reserve1;
         (reserve0, reserve1, blockTimestampLast) = pair.getReserves();
         require(reserve0 > 0 && reserve1 > 0, "empty-pair");
     }
