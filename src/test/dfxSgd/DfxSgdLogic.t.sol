@@ -254,7 +254,7 @@ contract DfxSgdLogicTest is DSTest, stdCheats {
     }
 
     function test_dfxsgd_mint_no_fees(uint256 lpAmount) public {
-        cheats.assume(lpAmount > 1e6);
+        cheats.assume(lpAmount > 1e5);
         cheats.assume(lpAmount < 1_000_000_000e18);
 
         accessAdmin.call(
@@ -446,5 +446,41 @@ contract DfxSgdLogicTest is DSTest, stdCheats {
             abi.encodeWithSelector(dfxSgd.setPaused.selector, false)
         );
         test_dfxsgd_mint(100e18);
+    }
+
+    function test_dfxsgd_mint_burn_spotprice() public {
+        assertEq(dfx.balanceOf(address(this)), 0);
+        assertEq(xsgd.balanceOf(address(this)), 0);
+
+        // Mint + burn one token w/o fees
+        test_dfxsgd_burn_no_fee(1e6);
+
+        // Now we go from
+        // DFX -> WETH -> USDC @ sushi
+        // USDC -> XSGD @ dfx
+        // And see if we end up with 1 XSGD
+        address[] memory path = new address[](3);
+        path[0] = Mainnet.DFX;
+        path[1] = Mainnet.WETH;
+        path[2] = Mainnet.USDC;
+        uint256 usdcOut = sushiRouter.getAmountsOut(
+            dfx.balanceOf(address(this)),
+            path
+        )[2];
+        uint256 xsgdOutFromDfx = dfxUsdcXsgdA.viewOriginSwap(
+            address(usdc),
+            address(xsgd),
+            usdcOut
+        );
+
+        emit log_uint(xsgd.balanceOf(address(this)));
+        emit log_uint(xsgdOutFromDfx);
+
+        uint256 totalXsgdOut = xsgdOutFromDfx + xsgd.balanceOf(address(this));
+
+        emit log_uint(totalXsgdOut);
+
+        // assertLe(totalXsgdOut, 1.001e18);
+        // assertGt(totalXsgdOut, 0.999e18);
     }
 }

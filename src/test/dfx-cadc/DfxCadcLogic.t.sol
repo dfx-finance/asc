@@ -473,9 +473,12 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
             address(cadc),
             usdcOut
         );
+        emit log_uint(cadc.balanceOf(address(this)));
+        emit log_uint(cadcOutFromDfx);
 
         uint256 totalCadcOut = cadcOutFromDfx + cadc.balanceOf(address(this));
 
+        emit log_uint(totalCadcOut);
         assertLe(totalCadcOut, 1.001e18);
         assertGt(totalCadcOut, 0.999e18);
     }
