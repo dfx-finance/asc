@@ -228,8 +228,6 @@ contract DfxSgdLogicTest is DSTest, stdCheats {
         (uint256 xsgdAmount, uint256 dfxAmount) = dfxSgd.getUnderlyings(
             100e18
         );
-        emit log_uint(xsgdAmount);
-        emit log_uint(dfxAmount);
         uint256 sgdPerDfx = twap.read();
         // Multiple by 1e12 to match dfx decimal places
         uint256 sum = (xsgdAmount * 1e12) + ((dfxAmount * sgdPerDfx) / 1e18);
@@ -457,8 +455,6 @@ contract DfxSgdLogicTest is DSTest, stdCheats {
 
         // Mint + burn one token w/o fees
         test_dfxsgd_burn_no_fee(1e18);
-        emit log_uint(dfx.balanceOf(address(this)));
-        emit log_uint(xsgd.balanceOf(address(this)));
 
         // Now we go from
         // DFX -> WETH -> USDC @ sushi
@@ -477,9 +473,6 @@ contract DfxSgdLogicTest is DSTest, stdCheats {
             address(xsgd),
             usdcOut
         );
-
-        emit log_uint(xsgd.balanceOf(address(this)));
-        emit log_uint(xsgdOutFromDfx);
 
         uint256 totalXsgdOut = xsgdOutFromDfx + xsgd.balanceOf(address(this));
 
