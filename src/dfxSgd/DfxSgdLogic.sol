@@ -83,9 +83,9 @@ contract DfxSgdLogic is DfxSgdState {
         // Sanity checks
         require(
             dfxRatio > 0 &&
-                dfxRatio < 1e18 &&
-                xsgdRatio > 0 &&
-                xsgdRatio < 1e18,
+            dfxRatio < 1e18 &&
+            xsgdRatio > 0 &&
+            xsgdRatio < 1e18,
             "invalid-ratios"
         );
 
@@ -255,7 +255,7 @@ contract DfxSgdLogic is DfxSgdState {
     {
         uint256 sgdPerDfx = IDfxOracle(dfxSgdTwap).read();
 
-        xsgdAmount = FullMath.mulDivRoundingUp(_amount, xsgdRatio, 1e18);
+        xsgdAmount = FullMath.mulDivRoundingUp(_amount, xsgdRatio, 1e30);
         dfxAmount = FullMath.mulDivRoundingUp(_amount, dfxRatio, 1e18);
         dfxAmount = FullMath.mulDivRoundingUp(dfxAmount, 1e18, sgdPerDfx);
     }
