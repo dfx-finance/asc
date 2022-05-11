@@ -22,6 +22,9 @@ const CADC = "0xcaDC0acd4B445166f12d2C07EAc6E2544FbE2Eef";
 const UNISWAP_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
 const UNISWAP_NFT_MANAGER = "0xC36442b4a4522E871399CD717aBDD847Ab11FE88";
 
+// Access controller
+const DFX_GOV_MULTISIG = '0x27E843260c71443b4CC8cB6bF226C3f77b9695AF'
+
 
 const main = async () => {
     const dfxCadToken = new ethers.Contract(DFXCAD, DfxCadLogicV1Artifact.abi, wallet);
@@ -65,27 +68,36 @@ const main = async () => {
     const upperTickAmount = TickMath.getTickAtSqrtRatio(upperSqrtPriceX96);
     const lowerTick = lowerTickAmount - (lowerTickAmount % tickSpacing);
     const upperTick = upperTickAmount - (upperTickAmount % tickSpacing);
-    console.log(lowerTick, upperTick);
-    //-- these will be used for MUNI mint position later
 
     // Deploy MUNI contract
-    const liquidity = 1_000;
-
     const MUNILogicFactory = new ethers.ContractFactory(
         MUNILogicV1Artifact.abi, MUNILogicV1Artifact.bytecode.object, wallet
     )
     const muniLogicV1 = await deployContract({
-        name: 'MUNILogicV1Artifact',
+        name: 'MUNILogicV1',
         deployer: wallet,
         factory: MUNILogicFactory,
-        args: [], // MUNI initialization args from MUNI.t.sol
+        args: [],
         opts: {
-            gasLimit: 3040761,
-            maxFeePerGas: 100000,
+            maxFeePerGas: 54796832180,
         }
     });
 
-    console.log(muniLogicV1.address)
+    // const callargs = [
+    //     DFX_GOV_MULTISIG,  // owner
+    //     poolAddress,
+    //     FeeAmount.LOWEST,
+    //     lowerTick,
+    //     upperTick,
+    //     "muni-dfxcad-cadc",
+    //     "MUNI dfxCAD/CADC"
+    // ]
+
+    // const liquidity = 1_000;
+    // const mintAmounts = await muniLogicV1.getMintAmounts(liquidity);
+    // console.log(mintAmounts);
+
+    // console.log(muniLogicV1.address)
 
     // const output = {
         // dfxCadCadcPool: dfxCadCadcPool.address,
