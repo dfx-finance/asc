@@ -48,7 +48,7 @@ const testSwapForCollaterals = async () => {
     const dfxToken = new ethers.Contract(DFX, IERC20.abi, wallet);
     const usdcToken = new ethers.Contract(USDC, FiatTokenV2Artifact, wallet);
 
-    // Swap for DFX
+    // Swap ETH->DFX
     let currentBlock = await provider.getBlock();
     let deadline = currentBlock.timestamp + 10 * 60;
     await sushiRouter.swapExactETHForTokens(
@@ -61,7 +61,7 @@ const testSwapForCollaterals = async () => {
     const dfx = await dfxToken.balanceOf(wallet.address);
     console.log("DFX balance:", formatUnits(dfx, 18));    
 
-    // Swap for USDC
+    // Swap ETH->USDC
     currentBlock = await provider.getBlock();
     deadline = currentBlock.timestamp + 10 * 60;
     await sushiRouter.swapExactETHForTokens(
@@ -74,7 +74,7 @@ const testSwapForCollaterals = async () => {
     const usdc = await usdcToken.balanceOf(wallet.address);
     console.log("USDC balance:", formatUnits(usdc, 6));
 
-    // Swap for USDC->CADC
+    // Swap USDC->CADC
     await usdcToken.approve(dfxUsdcCadcCurve.address, ethers.constants.MaxUint256);
     currentBlock = await provider.getBlock();
     deadline = currentBlock.timestamp + 10 * 60;    
@@ -104,29 +104,33 @@ const testMintDfxCad = async () => {
     console.log("dfxCAD balance:", formatUnits(dfxCad));
 }
 
-
 /*--- MAIN DEPLOYMENT ---*/
 const main = async () => {
     const dfxCadToken = new ethers.Contract(DFXCAD, DfxCadLogicV1Artifact.abi, wallet);
     const cadcToken = new ethers.Contract(CADC, FiatTokenV2Artifact, wallet);
     const uniswapV3Factory = new ethers.Contract(UNISWAP_FACTORY, IUniswapV3FactoryArtifact.abi, wallet);
+    const MUNILogicFactory = new ethers.ContractFactory(
+        MUNILogicV1Artifact.abi, MUNILogicV1Artifact.bytecode.object, wallet
+    )
+    const UpgradableProxyFactory = new ethers.ContractFactory(
+        ASCUpgradableProxyArtifact.abi, ASCUpgradableProxyArtifact.bytecode.object, wallet
+    )    
 
     // Setup
     if (TESTING) {
-        await testSwapForCollaterals();
-        await testMintDfxCad();
+        await testSwapForCollaterals(wallet);
+        await testMintDfxCad(wallet);
     } else {
         // Check token addresses both exist
-        const dfxCadSupply = await dfxCadToken.totalSupply();
-        const cadcSupply = await cadcToken.totalSupply();
-        console.log(`Total supply--dfxCad: ${formatUnits(dfxCadSupply)} cadc: ${formatUnits(cadcSupply)}`);
+        const dfxCadBalance = await dfxCadToken.balanceOf(wallet.address);
+        const cadcBalance = await cadcToken.balanceOf(wallet.address);
+        console.log(`Total balance--dfxCad: ${formatUnits(dfxCadBalance)} cadc: ${formatUnits(cadcBalance)}`);
     }
 
     // Create the new Uniswap pool
     console.log("Creating UniswapV3 dfxCAD/CADC pool...");
     const feeAmount = FeeAmount.LOWEST;
-    const tx0 = await uniswapV3Factory.createPool(dfxCadToken.address, cadcToken.address, feeAmount);
-    await tx0.wait();
+    await uniswapV3Factory.createPool(dfxCadToken.address, cadcToken.address, feeAmount);
 
     // Fetch pool's address
     const poolAddress = await uniswapV3Factory.getPool(dfxCadToken.address, cadcToken.address, feeAmount);
@@ -140,8 +144,7 @@ const main = async () => {
 
     // Create sqrtPrice from 1 dfxCAD:1 CADC and initialize pool
     const sqrtRatioX96 = encodeSqrtRatioX96(1, 1);
-    const tx1 = await DfxCadCadcPool.connect(wallet).initialize(sqrtRatioX96.toString());
-    await tx1.wait();
+    await DfxCadCadcPool.connect(wallet).initialize(sqrtRatioX96.toString());
 
     // Increase TWAP window like in Muni.t.sol tests
     await DfxCadCadcPool.increaseObservationCardinalityNext(5);
@@ -155,13 +158,6 @@ const main = async () => {
     const upperTick = upperTickAmount - (upperTickAmount % tickSpacing);
 
     // Deploy MUNI contract
-    const MUNILogicFactory = new ethers.ContractFactory(
-        MUNILogicV1Artifact.abi, MUNILogicV1Artifact.bytecode.object, wallet
-    )
-    const UpgradableProxyFactory = new ethers.ContractFactory(
-        ASCUpgradableProxyArtifact.abi, ASCUpgradableProxyArtifact.bytecode.object, wallet
-    )
-
     const muniLogicV1 = await deployContract({
         name: 'MUNILogicV1',
         deployer: wallet,
@@ -180,8 +176,8 @@ const main = async () => {
         lowerTick,
         upperTick,
     ]);
-    const MUNIProxy = await deployContract({
-        name: 'MUNI',
+    const muniProxy = await deployContract({
+        name: 'DFX MUNI dfxCAD/CADC',
         deployer: wallet,
         factory: UpgradableProxyFactory,
         args: [
@@ -194,30 +190,35 @@ const main = async () => {
         }
     });
 
-    console.log(MUNIProxy.address)
+    // Mint MUNI LP
+    const userDfxCadToken = new ethers.Contract(DFXCAD, DfxCadLogicV1Artifact.abi, wallet);
+    const userCadcToken = new ethers.Contract(CADC, FiatTokenV2Artifact, wallet);
+    const muni = new ethers.Contract(muniProxy.address, MUNILogicV1Artifact.abi, wallet);
+    await userDfxCadToken.approve(muni.address, ethers.constants.MaxUint256);
+    await userCadcToken.approve(muni.address, ethers.constants.MaxUint256);
+    await muni.mint(parseUnits("1000"), wallet.address);
+    const muniBalance = await muni.balanceOf(wallet.address);
+    console.log("MUNI LP minted:", formatUnits(muniBalance));
 
-    // const output = {
-        // dfxCadCadcPool: dfxCadCadcPool.address,
-        // dfxCadcProxy: dfxCadcProxy.address,
-        // dfxCadcLogic: dfxCadcLogic.address,
-        // dfxCadTwap: dfxCadTwap.address,
-        // calldata: {
-        //     dfxCadTwap: ethers.utils.defaultAbiCoder.encode(['address'], [
-        //         TWAP_ROLE_ADMIN,
-        //     ]),
-        //     dfxCadcProxy: ethers.utils.defaultAbiCoder.encode(['address', 'address', 'bytes'], [
-        //         dfxCadcLogic.address,
-        //         DFX_CADC_PROXY_ADMIN,
-        //         calldata
-        //     ])
-        // }
-    // };
+    // Output to file
+    const output = {
+        muniProxy: muniProxy.address,
+        calldata: {
+            muni: ethers.utils.defaultAbiCoder.encode(["address", "address", "uint", "int", "int"], [
+                DFX_GOV_MULTISIG,
+                poolAddress,
+                FeeAmount.LOWEST,
+                lowerTick,
+                upperTick,
+            ]),
+        },
+        muniLpMinted: formatUnits(muniBalance),
+    };
 
-    // // Output to file
-    // const __filename = fileURLToPath(import.meta.url);
-    // const __dirname = path.dirname(__filename);
-    // const outputPath = path.join(__dirname, new Date().getTime().toString() + `_uniswapv3_dfxcad-cadc.json`);
-    // fs.writeFileSync(outputPath, JSON.stringify(output, null, 4));
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const outputPath = path.join(__dirname, new Date().getTime().toString() + `_uniswapv3_dfxcad-cadc.json`);
+    fs.writeFileSync(outputPath, JSON.stringify(output, null, 4));
 }
 
 // We recommend this pattern to be able to use async/await everywhere
