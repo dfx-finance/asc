@@ -10,6 +10,7 @@ import IUniswapV3PoolArtifact from '@uniswap/v3-core/artifacts/contracts/interfa
 import INonfungiblePositionManagerArtifact from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import DfxCadLogicV1Artifact from '../out/DfxCadLogicV1.sol/DfxCadLogicV1.json';
 import MUNILogicV1Artifact from '../out/MUNILogicV1.sol/MUNILogicV1.json';
+import ASCUpgradableProxyArtifact from '../out/ASCUpgradableProxy.sol/ASCUpgradableProxy.json';
 import { encodeSqrtRatioX96, FeeAmount, TickMath } from '@uniswap/v3-sdk';
 
 const { formatUnits } = ethers.utils;
@@ -62,8 +63,8 @@ const main = async () => {
     await DfxCadCadcPool.increaseObservationCardinalityNext(5);
 
     const tickSpacing = await DfxCadCadcPool.tickSpacing();
-    const lowerSqrtPriceX96 = encodeSqrtRatioX96(100, 110);
-    const upperSqrtPriceX96 = encodeSqrtRatioX96(110, 100);
+    const lowerSqrtPriceX96 = encodeSqrtRatioX96(1000, 1004);
+    const upperSqrtPriceX96 = encodeSqrtRatioX96(1004, 1000);
     const lowerTickAmount = TickMath.getTickAtSqrtRatio(lowerSqrtPriceX96);
     const upperTickAmount = TickMath.getTickAtSqrtRatio(upperSqrtPriceX96);
     const lowerTick = lowerTickAmount - (lowerTickAmount % tickSpacing);
@@ -73,6 +74,10 @@ const main = async () => {
     const MUNILogicFactory = new ethers.ContractFactory(
         MUNILogicV1Artifact.abi, MUNILogicV1Artifact.bytecode.object, wallet
     )
+    const UpgradableProxyFactory = new ethers.ContractFactory(
+        ASCUpgradableProxyArtifact.abi, ASCUpgradableProxyArtifact.bytecode.object, wallet
+    )
+
     const muniLogicV1 = await deployContract({
         name: 'MUNILogicV1',
         deployer: wallet,
@@ -83,21 +88,29 @@ const main = async () => {
         }
     });
 
-    // const callargs = [
-    //     DFX_GOV_MULTISIG,  // owner
-    //     poolAddress,
-    //     FeeAmount.LOWEST,
-    //     lowerTick,
-    //     upperTick,
-    //     "muni-dfxcad-cadc",
-    //     "MUNI dfxCAD/CADC"
-    // ]
+    // Deploy ASCUpgradableProxy with the encoded args and initialize MUNI pool
+    const calldata = MUNILogicFactory.interface.encodeFunctionData("initialize", [
+        DFX_GOV_MULTISIG,  // owner
+        poolAddress,
+        FeeAmount.LOWEST,
+        lowerTick,
+        upperTick,
+    ]);
+    const MUNIProxy = await deployContract({
+        name: 'MUNI',
+        deployer: wallet,
+        factory: UpgradableProxyFactory,
+        args: [
+            muniLogicV1.address,
+            DFX_GOV_MULTISIG,
+            calldata
+        ],
+        opts: {
+            // gasLimit: 1667809
+        }
+    });
 
-    // const liquidity = 1_000;
-    // const mintAmounts = await muniLogicV1.getMintAmounts(liquidity);
-    // console.log(mintAmounts);
-
-    // console.log(muniLogicV1.address)
+    console.log(MUNIProxy.address)
 
     // const output = {
         // dfxCadCadcPool: dfxCadCadcPool.address,
