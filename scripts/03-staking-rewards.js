@@ -11,9 +11,6 @@ const MUNI_DFXCAD_CADC = "0xe9669516e09f5710023566458f329cce6437aaac";
 const DFX_TREASURY = "0x26f539A0fE189A7f228D7982BF10Bc294FA9070c";
 
 async function main() {
-    // console.log(
-    //     chalk.blue(`>>>>>>>>>>>> Network: ${hre.network.config.url} <<<<<<<<<<<<`)
-    // );
     console.log(
         chalk.blue(`>>>>>>>>>>>> Deployer: ${wallet.address} <<<<<<<<<<<<`)
     );
