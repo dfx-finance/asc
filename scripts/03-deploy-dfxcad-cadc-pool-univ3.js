@@ -33,10 +33,10 @@ const main = async () => {
     const uniswapV3Factory = new ethers.Contract(UNISWAP_FACTORY, IUniswapV3FactoryArtifact.abi, wallet);
     const MUNILogicFactory = new ethers.ContractFactory(
         MUNILogicV1Artifact.abi, MUNILogicV1Artifact.bytecode.object, wallet
-    )
+    );
     const UpgradableProxyFactory = new ethers.ContractFactory(
         ASCUpgradableProxyArtifact.abi, ASCUpgradableProxyArtifact.bytecode.object, wallet
-    )    
+    );   
 
     // Check token addresses both exist
     const dfxCadBalance = await dfxCadToken.balanceOf(wallet.address);

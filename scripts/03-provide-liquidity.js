@@ -1,11 +1,11 @@
+import ethers from 'ethers'
 import fs from 'fs'
 import path from 'path'
-import ethers from 'ethers'
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'url'
 import { wallet, provider } from './common.js'
 
 import IERC20 from "../out/IERC20.sol/IERC20.json";
-import FiatTokenV2Artifact from "./abis/FiatTokenV2.json"
+import FiatTokenV2Artifact from "./abis/FiatTokenV2.json";
 
 import DfxCadLogicV1Artifact from '../out/DfxCadLogicV1.sol/DfxCadLogicV1.json';
 import MUNILogicV1Artifact from '../out/MUNILogicV1.sol/MUNILogicV1.json';
