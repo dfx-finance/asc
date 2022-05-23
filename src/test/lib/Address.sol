@@ -8,6 +8,8 @@ library Mainnet {
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant DFX = 0x888888435FDe8e7d4c54cAb67f206e4199454c60;
     address public constant CADC = 0xcaDC0acd4B445166f12d2C07EAc6E2544FbE2Eef;
+    address public constant XSGD = 0x70e8dE73cE538DA2bEEd35d14187F6959a8ecA96;
+    address public constant EURS = 0xdB25f211AB05b1c97D595516F45794528a807ad8;
 
     address public constant DFX_CAD = 0xFE32747d0251BA92bcb80b6D16C8257eCF25AB1C;
     address public constant DFX_CAD_GOV = 0x27E843260c71443b4CC8cB6bF226C3f77b9695AF;
