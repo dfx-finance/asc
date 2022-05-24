@@ -225,6 +225,32 @@ contract DfxCadcLogicTest is DSTest, stdCheats {
         );
     }
 
+    function test_dfxcad_recollateralize() public {
+        uint256 cadPerDfx = twap.read();
+        emit log_uint(cadPerDfx);
+        
+        tip(address(dfx), address(this), 1_000_000e18);
+        // Dump DFX to push down the price
+        address[] memory path = new address[](2);
+        path[0] = Mainnet.DFX;
+        path[1] = Mainnet.WETH;
+
+        for (uint i=0; i < 10; i++) {
+            sushiRouter.swapExactTokensForTokens(
+                100_000e18,
+                0,
+                path,
+                address(this),
+                block.timestamp
+            );
+
+            cheats.warp(block.timestamp + dfxCadc.POKE_WAIT_PERIOD() + 1);
+            twap.update();
+            uint256 cadPerDfx = twap.read();
+            emit log_uint(cadPerDfx);
+        }
+    }
+
     function test_dfxcadc_get_underlyings() public {
         (uint256 cadcAmount, uint256 dfxAmount) = dfxCadc.getUnderlyings(
             100e18
