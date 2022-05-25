@@ -5,6 +5,7 @@ import path from 'path'
 import { wallet, deployContract } from './common.js'
 
 import StakingRewardsArtifact from '../out/StakingRewards.sol/StakingRewards.json';
+import { fileURLToPath } from 'url'
 
 const DFX = "0x888888435fde8e7d4c54cab67f206e4199454c60";
 const MUNI_DFXCAD_CADC = "0xe9669516e09f5710023566458f329cce6437aaac";
@@ -33,6 +34,8 @@ async function main() {
         muniStakingRewards: muniStakingRewards.address
     };
 
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
     const outputPath = path.join(
         __dirname,
         new Date().getTime().toString() + `-muni-dfxcad-staking-rewards_deployed.json`

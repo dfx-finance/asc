@@ -4,7 +4,7 @@ import ethers from 'ethers'
 import { fileURLToPath } from 'url';
 import { deployContract, wallet } from './common.js'
 
-import FiatTokenV2Artifact from "./abis/FiatTokenV2.json"
+import FiatTokenV2Artifact from "./abis/FiatTokenV2.json";
 import IUniswapV3FactoryArtifact from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json';
 import IUniswapV3PoolArtifact from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 
@@ -24,7 +24,7 @@ const DFXCAD = "0xFE32747d0251BA92bcb80b6D16C8257eCF25AB1C";
 const UNISWAP_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
 
 // Access controller
-const DFX_GOV_MULTISIG = '0x27E843260c71443b4CC8cB6bF226C3f77b9695AF'
+const DFX_GOV_MULTISIG = "0x27E843260c71443b4CC8cB6bF226C3f77b9695AF";
 
 
 const main = async () => {
@@ -66,8 +66,8 @@ const main = async () => {
     await DfxCadCadcPool.increaseObservationCardinalityNext(5);
 
     const tickSpacing = await DfxCadCadcPool.tickSpacing();
-    const lowerSqrtPriceX96 = encodeSqrtRatioX96(1000, 1004);
-    const upperSqrtPriceX96 = encodeSqrtRatioX96(1004, 1000);
+    const lowerSqrtPriceX96 = encodeSqrtRatioX96(1000, 1020);
+    const upperSqrtPriceX96 = encodeSqrtRatioX96(1020, 1000);
     const lowerTickAmount = TickMath.getTickAtSqrtRatio(lowerSqrtPriceX96);
     const upperTickAmount = TickMath.getTickAtSqrtRatio(upperSqrtPriceX96);
     const lowerTick = lowerTickAmount - (lowerTickAmount % tickSpacing);
@@ -102,7 +102,7 @@ const main = async () => {
             calldata
         ],
         opts: {
-            // gasLimit: 1667809
+            gasLimit: 16678090
         }
     });
 

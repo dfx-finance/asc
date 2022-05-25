@@ -9,7 +9,7 @@ import FiatTokenV2Artifact from "./abis/FiatTokenV2.json";
 
 import DfxCadLogicV1Artifact from '../out/DfxCadLogicV1.sol/DfxCadLogicV1.json';
 import MUNILogicV1Artifact from '../out/MUNILogicV1.sol/MUNILogicV1.json';
-import IUniswapV2Router02 from '../out/IUniswapV2.sol/IUniswapV2Router02.json'
+import IUniswapV2Router02 from '../out/IUniswapV2.sol/IUniswapV2Router02.json';
 import IDfxCurve from '../out/IDfxCurve.sol/IDfxCurve.json';
 
 const { formatUnits, parseUnits } = ethers.utils;
@@ -30,7 +30,7 @@ const SUSHI_ROUTER = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F";
 const DFX_CADC_USDC_CURVE = "0xa6C0CbCaebd93AD3C6c94412EC06aaA37870216d";
 
 // MUNI
-const MUNI_PROXY_ADDRESS = '0x9b4e383192a089C8177f5E1293FC037956Cfd884';
+const MUNI_PROXY_ADDRESS = "0xA56F946D6398Dd7d9D4D9B337Cf9E0F68982ca5B";
 
 
 /*--- TESTING HELPERS ---*/
