@@ -66,7 +66,7 @@ const main = async () => {
     await DfxCadCadcPool.increaseObservationCardinalityNext(5);
 
     const tickSpacing = await DfxCadCadcPool.tickSpacing();
-    const lowerSqrtPriceX96 = encodeSqrtRatioX96(1000, 1020);
+    const lowerSqrtPriceX96 = encodeSqrtRatioX96(980, 1000);
     const upperSqrtPriceX96 = encodeSqrtRatioX96(1020, 1000);
     const lowerTickAmount = TickMath.getTickAtSqrtRatio(lowerSqrtPriceX96);
     const upperTickAmount = TickMath.getTickAtSqrtRatio(upperSqrtPriceX96);
