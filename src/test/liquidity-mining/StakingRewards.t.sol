@@ -72,4 +72,18 @@ contract StakingRewardsTest is DSTest {
         cheats.prank(address(user1));
         stakingRewards.stake(100e18);
     }
+
+    function testFail_staking_user_renounceOwnership() public {
+        user1.call(
+            address(stakingRewards),
+            abi.encodeWithSelector(
+                stakingRewards.renounceOwnership.selector
+            )
+        );
+    }
+
+    function testFail_staking_owner_renounceOwnership() public {
+        cheats.prank(address(this));
+        stakingRewards.renounceOwnership();
+    }
 }

@@ -173,6 +173,10 @@ contract StakingRewards is Ownable, ReentrancyGuard, Pausable {
         : _unpause();
     }
 
+    function renounceOwnership() public pure override {
+        revert("This feature is not available");
+    }
+
     /* ========== MODIFIERS ========== */
 
     modifier updateReward(address account) {
