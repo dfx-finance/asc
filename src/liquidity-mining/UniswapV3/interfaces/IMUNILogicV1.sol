@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-
+import "../../../interfaces/IUniswapV3.sol";
 interface IMUNILogicV1 {
     function mint(uint256 mintAmount, address receiver) external returns (uint256 amount0, uint256 amount1, uint128 liquidityMinted);
     function burn(uint256 burnAmount, address receiver) external returns (uint256 amount0, uint256 amount1, uint128 liquidityBurned);
@@ -13,7 +13,7 @@ interface IMUNILogicV1 {
     function uniswapV3MintCallback(uint256 amount0Owed, uint256 amount1Owed, bytes calldata) external;
     function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata) external;
 
-    function getPositionID() external view returns (bytes32 positionID)
+    function getPositionID() external view returns (bytes32 positionID);
     function getMintAmounts(uint256 amount0Max, uint256 amount1Max) external view returns (uint256 amount0, uint256 amount1, uint256 mintAmount);
     function getBurnAmounts(uint256 lpAmount) external view returns (uint256 amount0, uint256 amount1);
     function getUnderlyingBalances() external view returns (uint256 amount0Current, uint256 amount1Current);
