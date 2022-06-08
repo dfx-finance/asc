@@ -174,7 +174,8 @@ contract MUNI is
             amount1
         );
 
-        pool.mint(address(this), lowerTick, upperTick, liquidityMinted, "");
+        (uint256 paidAmount0, uint256 paidAmount1) = pool.mint(address(this), lowerTick, upperTick, liquidityMinted, "");
+        require(paidAmount0 == amount0 && paidAmount1 == amount1, "Mint prices differ");
 
         _mint(receiver, mintAmount);
         emit Minted(receiver, mintAmount, amount0, amount1, liquidityMinted);
