@@ -1,6 +1,6 @@
 pragma solidity ^0.8.13;
 
-import "@forge-std/Script.sol";
+import "forge-std/Script.sol";
 import "@openzeppelin/contracts/governance/TimelockController.sol";
 
 contract TimelockDeploy is Script {
