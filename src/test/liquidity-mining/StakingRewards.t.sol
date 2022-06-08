@@ -50,7 +50,7 @@ contract StakingRewardsTest is DSTest {
             proposers,
             executors
         );
-
+        
         // Make timelock the owner of the staking contract
         stakingRewards = new StakingRewards(
             address(multisig),
@@ -85,7 +85,7 @@ contract StakingRewardsTest is DSTest {
         multisig.call(
             address(timelock),
             abi.encodeWithSelector(
-                timelock.schedule.selector, 
+                timelock.schedule.selector,
                 address(stakingRewards),
                 0,
                 abi.encodeWithSelector(stakingRewards.notifyRewardAmount.selector, 100_000e18),
