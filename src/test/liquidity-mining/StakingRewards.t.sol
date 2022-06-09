@@ -50,7 +50,7 @@ contract StakingRewardsTest is DSTest {
             proposers,
             executors
         );
-
+        
         // Make timelock the owner of the staking contract
         stakingRewards = new StakingRewards(
             address(multisig),
@@ -85,7 +85,7 @@ contract StakingRewardsTest is DSTest {
         multisig.call(
             address(timelock),
             abi.encodeWithSelector(
-                timelock.schedule.selector, 
+                timelock.schedule.selector,
                 address(stakingRewards),
                 0,
                 abi.encodeWithSelector(stakingRewards.notifyRewardAmount.selector, 100_000e18),
@@ -243,5 +243,50 @@ contract StakingRewardsTest is DSTest {
         uint user2Bal = rewardToken.balanceOf(address(user2));
         
         assertEq(user1Bal.mul(2), user2Bal);
+    }
+    
+    function test_staking_logic() public {
+        cheats.prank(address(user1));
+        stakingRewards.getReward();
+        cheats.prank(address(user2));
+        stakingRewards.getReward();
+
+        uint256 reward1 = rewardToken.balanceOf(address(user1));
+        uint256 reward2 = rewardToken.balanceOf(address(user2));
+
+        assertEq((reward1.mul(2)), reward2);
+    }
+
+    function test_withdraw_logic() public {
+        cheats.prank(address(user1));
+        stakingRewards.withdraw(100e18);
+        cheats.prank(address(user2));
+        stakingRewards.withdraw(200e18);
+
+        uint256 stkBal1 = stakingToken.balanceOf(address(user1));
+        uint256 stkBal2 = stakingToken.balanceOf(address(user2));
+
+        uint256 reward1 = rewardToken.balanceOf(address(user1));
+        uint256 reward2 = rewardToken.balanceOf(address(user2));
+
+        assertEq((stkBal1.mul(2)), stkBal2);
+        assertEq(reward1, 0);
+        assertEq(reward2, 0);
+    }
+
+    function test_exit_logic() public {
+        cheats.prank(address(user1));
+        stakingRewards.exit();
+        cheats.prank(address(user2));
+        stakingRewards.exit();
+        
+        uint256 stkBal1 = stakingToken.balanceOf(address(user1));
+        uint256 stkBal2 = stakingToken.balanceOf(address(user2));
+
+        uint256 reward1 = rewardToken.balanceOf(address(user1));
+        uint256 reward2 = rewardToken.balanceOf(address(user2));        
+
+        assertEq(stkBal1.mul(2), stkBal2);
+        assertEq(reward1.mul(2), reward2);
     }
 }
