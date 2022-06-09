@@ -294,8 +294,8 @@ contract MUNILogicV1 is MUNIState {
     }
 
     /// @notice Reinvest fees earned into underlying position
-    /// Position bounds CANNOT be altered by gelato, only manager may via executiveRebalance.
-    /// Frequency of rebalance configured with gelatoRebalanceBPS, alterable by manager.
+    /// Only manager can alter position bounds via executiveRebalance
+    /// Frequency of rebalance configured with rebalanceBPS, alterable by manager.
     function rebalance(
         uint160 swapThresholdPrice,
         uint256 swapAmountBPS,
@@ -322,9 +322,9 @@ contract MUNILogicV1 is MUNIState {
         emit Rebalance(lowerTick, upperTick, liquidity, newLiquidity);
     }
 
-    /// @notice withdraw manager fees accrued, only gelato executors can call.
+    /// @notice withdraw manager fees accrued, only executors can call.
     /// Target account to receive fees is managerTreasury, alterable by manager.
-    /// Frequency of withdrawals configured with gelatoWithdrawBPS, alterable by manager.
+    /// Frequency of withdrawals configured with withdrawBPS, alterable by manager.
     function withdrawManagerBalance(uint256 feeAmount, address feeToken)
         external
     {
@@ -444,7 +444,7 @@ contract MUNILogicV1 is MUNIState {
 
     /// @notice compute total underlying holdings of the MUNI token supply
     /// includes current liquidity invested in uniswap position, current fees earned
-    /// and any uninvested leftover (but does not include manager or gelato fees accrued)
+    /// and any uninvested leftover (but does not include manager or fees accrued)
     /// @return amount0Current current total underlying balance of token0
     /// @return amount1Current current total underlying balance of token1
     function getUnderlyingBalances()
