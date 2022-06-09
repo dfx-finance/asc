@@ -484,6 +484,10 @@ contract MUNI is
         return _getUnderlyingBalances(sqrtRatioX96, tick);
     }
 
+    function renounceOwnership() public pure override {
+        revert("This feature is not available");
+    }
+
     // **** Private functions **** //
 
     function _rebalance(

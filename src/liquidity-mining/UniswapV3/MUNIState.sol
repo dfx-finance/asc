@@ -53,4 +53,8 @@ contract MUNIState is
 
     // Re-initialization guard
     bool isInitialized;
+
+    function renounceOwnership() public pure override {
+        revert("This feature is not available");
+    }
 }

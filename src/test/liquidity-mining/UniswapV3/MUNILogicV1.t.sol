@@ -36,6 +36,7 @@ contract MUNILogicV1Test is DSTest, stdCheats {
 
     // Mock contract users
     MockUser admin;
+    MockUser user;
 
     IUniswapV3Pool pool;
 
@@ -50,6 +51,7 @@ contract MUNILogicV1Test is DSTest, stdCheats {
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
 
     function setUp() public {
+        user = new MockUser();
         admin = new MockUser();
         token0 = new MockToken();
         token1 = new MockToken();
@@ -270,5 +272,19 @@ contract MUNILogicV1Test is DSTest, stdCheats {
 
         assertTrue(delta0 > 99e16 && delta0 <= 1e18);
         assertTrue(delta1 > 99e16 && delta1 <= 1e18);
+    }
+    
+    function testFail_muni_user_renounceOwnership() public {
+        user.call(
+            address(proxiedMuniLogic),
+            abi.encodeWithSelector(
+                proxiedMuniLogic.renounceOwnership.selector
+            )
+        );
+    }
+
+    function testFail_muni_owner_renounceOwnership() public {
+        cheats.prank(address(this));
+        proxiedMuniLogic.renounceOwnership();
     }
 }
