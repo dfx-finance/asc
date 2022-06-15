@@ -11,10 +11,10 @@ import "./UniswapV2Oracle.sol";
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract DfxCadTWAP is AccessControl, UniswapV2Oracle, IDfxOracle {
+contract DfxSgdTWAP is AccessControl, UniswapV2Oracle, IDfxOracle {
     // **** Roles **** //
-    bytes32 public constant SUDO = keccak256("dfxcadc.twap.sudo");
-    bytes32 public constant SUDO_ADMIN = keccak256("dfxcadc.twap.sudo.admin");
+    bytes32 public constant SUDO = keccak256("dfxsgd.twap.sudo");
+    bytes32 public constant SUDO_ADMIN = keccak256("dfxsgd.twap.sudo.admin");
 
     // **** Constants **** //
     address internal constant SUSHI_FACTORY =
@@ -24,8 +24,8 @@ contract DfxCadTWAP is AccessControl, UniswapV2Oracle, IDfxOracle {
 
     IChainLinkOracle ETH_USD_ORACLE =
         IChainLinkOracle(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
-    IChainLinkOracle CAD_USD_ORACLE =
-        IChainLinkOracle(0xa34317DB73e77d453b1B8d04550c44D10e981C8e);
+    IChainLinkOracle SGD_USD_ORACLE =
+        IChainLinkOracle(0xe25277fF4bbF9081C75Ab0EB13B4A13a721f3E13);
 
     constructor(address _admin)
         UniswapV2Oracle(SUSHI_FACTORY, DFX, WETH, 6 hours)
@@ -51,25 +51,25 @@ contract DfxCadTWAP is AccessControl, UniswapV2Oracle, IDfxOracle {
 
     // **** Public functions **** //
 
-    /// @notice Returns price of DFX in CAD, e.g. 1 DFX = X CAD
-    ///         Will assume 1 CADC = 1 CAD in this case
+    /// @notice Returns price of DFX in SGD, e.g. 1 DFX = X SGD
+    ///         Will assume 1 XSGD = 1 SGD in this case
     function read() public view override returns (uint256) {
         // 18 dec
         uint256 wethPerDfx18 = consult(DFX, 1e18);
 
         // in256, 8 dec -> uint256 18 dec
         (, int256 usdPerEth8, , , ) = ETH_USD_ORACLE.latestRoundData();
-        (, int256 usdPerCad8, , , ) = CAD_USD_ORACLE.latestRoundData();
+        (, int256 usdPerSgd8, , , ) = SGD_USD_ORACLE.latestRoundData();
         uint256 usdPerEth18 = uint256(usdPerEth8) * 1e10;
-        uint256 usdPerCad18 = uint256(usdPerCad8) * 1e10;
+        uint256 usdPerSgd18 = uint256(usdPerSgd8) * 1e10;
 
         // (eth/dfx) * (usd/eth) = usd/dfx
         uint256 usdPerDfx = (wethPerDfx18 * usdPerEth18) / 1e18;
 
-        // (usd/dfx) / (usd/cad) = cad/dfx
-        uint256 cadPerDfx = (usdPerDfx * 1e18) / usdPerCad18;
+        // (usd/dfx) / (usd/sgd) = sgd/dfx
+        uint256 sgdPerDfx = (usdPerDfx * 1e18) / usdPerSgd18;
 
-        return cadPerDfx;
+        return sgdPerDfx;
     }
 
     /* ========== EVENTS ========== */

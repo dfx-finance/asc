@@ -6,24 +6,67 @@ import "../interfaces/IDfxOracle.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./DfxCadcState.sol";
+import "./DfxEurState.sol";
 
 import "../libraries/FullMath.sol";
 
-contract DfxCadLogicV1 is DfxCadcState {
+contract DfxEurLogic is DfxEurState {
     using SafeERC20 for IERC20;
 
     // **** Initializing functions ****
 
-    // We don't need the old initialize logic as the state has
-    // already been set, this is just to change the name + symbol
-    function initialize() public {
-        // Don't initialize twice
-        require(keccak256(bytes(name())) == keccak256(bytes("dfxCADC")), "no-reinit");
+    // We don't need to check twice if the contract's initialized as
+    // __ERC20_init does that check
+    function initialize(
+        string memory _name,
+        string memory _symbol,
+        address _admin,
+        address _feeRecipient,
+        uint256 _mintBurnFee,
+        address _dfxEurTwap,
+        uint256 _eursRatio,
+        uint256 _dfxRatio,
+        uint256 _pokeRatioDelta
+    ) public initializer {
+        __AccessControl_init();
+        __ERC20_init(_name, _symbol);
+        __Pausable_init();
+        __ReentrancyGuard_init();
 
-        // Assign new name and symbol
-        _name = "dfxCAD";
-        _symbol = "dfxCAD";
+        _setRoleAdmin(SUDO_ROLE, SUDO_ROLE_ADMIN);
+        _setupRole(SUDO_ROLE_ADMIN, _admin);
+        _setupRole(SUDO_ROLE, _admin);
+
+        _setRoleAdmin(MARKET_MAKER_ROLE, MARKET_MAKER_ROLE_ADMIN);
+        _setupRole(MARKET_MAKER_ROLE_ADMIN, _admin);
+        _setupRole(MARKET_MAKER_ROLE, _admin);
+
+        _setRoleAdmin(POKE_ROLE, POKE_ROLE_ADMIN);
+        _setupRole(POKE_ROLE_ADMIN, _admin);
+        _setupRole(POKE_ROLE, _admin);
+
+        _setRoleAdmin(CR_DEFENDER, CR_DEFENDER_ADMIN);
+        _setupRole(CR_DEFENDER_ADMIN, _admin);
+        _setupRole(CR_DEFENDER, _admin);
+
+        // Oracle address
+        dfxEurTwap = _dfxEurTwap;
+
+        // Initial ratios
+        require(_dfxRatio + _eursRatio == 1e18, "invalid-ratio");
+        eursRatio = _eursRatio;
+        dfxRatio = _dfxRatio;
+
+        // Poke ratio delta
+        require(
+            _pokeRatioDelta <= MAX_POKE_RATIO_DELTA,
+            "poke-ratio-delta: too big"
+        );
+        pokeRatioDelta = _pokeRatioDelta;
+
+        // Fee recipients
+        feeRecipient = _feeRecipient;
+        mintBurnFee = _mintBurnFee;
     }
 
     // **** Modifiers ****
@@ -41,8 +84,8 @@ contract DfxCadLogicV1 is DfxCadcState {
         require(
             dfxRatio > 0 &&
                 dfxRatio < 1e18 &&
-                cadcRatio > 0 &&
-                cadcRatio < 1e18,
+                eursRatio > 0 &&
+                eursRatio < 1e18,
             "invalid-ratios"
         );
 
@@ -69,8 +112,8 @@ contract DfxCadLogicV1 is DfxCadcState {
     ///         assets will increase.
     function pokeUp() public onlyRole(POKE_ROLE) updatePokes {
         dfxRatio = dfxRatio + pokeRatioDelta;
-        cadcRatio = cadcRatio - pokeRatioDelta;
-        emit PokeUp(dfxRatio, cadcRatio);
+        eursRatio = eursRatio - pokeRatioDelta;
+        emit PokeUp(dfxRatio, eursRatio);
     }
 
     /// @notice Used when market price / TWAP is < than backing.
@@ -79,14 +122,14 @@ contract DfxCadLogicV1 is DfxCadcState {
     ///         assets will decrease
     function pokeDown() public onlyRole(POKE_ROLE) updatePokes {
         dfxRatio = dfxRatio - pokeRatioDelta;
-        cadcRatio = cadcRatio + pokeRatioDelta;
-        emit PokeDown(dfxRatio, cadcRatio);
+        eursRatio = eursRatio + pokeRatioDelta;
+        emit PokeDown(dfxRatio, eursRatio);
     }
 
     /// @notice Sets the TWAP address
-    function setDfxCadTwap(address _dfxCadTwap) public onlyRole(SUDO_ROLE) {
-        dfxCadTwap = _dfxCadTwap;
-        emit DfxCadTwapSet(_dfxCadTwap);
+    function setDfxEurTwap(address _dfxXgdTwap) public onlyRole(SUDO_ROLE) {
+        dfxEurTwap = _dfxXgdTwap;
+        emit DfxEurTwapSet(_dfxXgdTwap);
     }
 
     /// @notice Sets the fee recipient for mint/burn
@@ -97,7 +140,7 @@ contract DfxCadLogicV1 is DfxCadcState {
 
     /// @notice In case anyone sends tokens to the wrong address
     function recoverERC20(address _a) public onlyRole(SUDO_ROLE) {
-        require(_a != DFX && _a != CADC, "no");
+        require(_a != DFX && _a != EURS, "no");
         IERC20(_a).safeTransfer(
             msg.sender,
             IERC20(_a).balanceOf(address(this))
@@ -165,8 +208,8 @@ contract DfxCadLogicV1 is DfxCadcState {
     function mint(uint256 _amount) public nonReentrant whenNotPaused {
         require(_amount > 0, "non-zero only");
 
-        (uint256 cadcAmount, uint256 dfxAmount) = getUnderlyings(_amount);
-        IERC20(CADC).safeTransferFrom(msg.sender, address(this), cadcAmount);
+        (uint256 eursAmount, uint256 dfxAmount) = getUnderlyings(_amount);
+        IERC20(EURS).safeTransferFrom(msg.sender, address(this), eursAmount);
         IERC20(DFX).safeTransferFrom(msg.sender, address(this), dfxAmount);
 
         // No fee for market makers
@@ -194,8 +237,8 @@ contract DfxCadLogicV1 is DfxCadcState {
             _amount = _amount - _fee;
         }
 
-        (uint256 cadcAmount, uint256 dfxAmount) = getUnderlyings(_amount);
-        IERC20(CADC).safeTransfer(msg.sender, cadcAmount);
+        (uint256 eursAmount, uint256 dfxAmount) = getUnderlyings(_amount);
+        IERC20(EURS).safeTransfer(msg.sender, eursAmount);
         IERC20(DFX).safeTransfer(msg.sender, dfxAmount);
     }
 
@@ -208,13 +251,13 @@ contract DfxCadLogicV1 is DfxCadcState {
     function getUnderlyings(uint256 _amount)
         public
         view
-        returns (uint256 cadcAmount, uint256 dfxAmount)
+        returns (uint256 eursAmount, uint256 dfxAmount)
     {
-        uint256 cadPerDfx = IDfxOracle(dfxCadTwap).read();
+        uint256 eurPerDfx = IDfxOracle(dfxEurTwap).read();
 
-        cadcAmount = FullMath.mulDivRoundingUp(_amount, cadcRatio, 1e18);
+        eursAmount = FullMath.mulDivRoundingUp(_amount, eursRatio, 1e34);
         dfxAmount = FullMath.mulDivRoundingUp(_amount, dfxRatio, 1e18);
-        dfxAmount = FullMath.mulDivRoundingUp(dfxAmount, 1e18, cadPerDfx);
+        dfxAmount = FullMath.mulDivRoundingUp(dfxAmount, 1e18, eurPerDfx);
     }
 
     /* ========== EVENTS ========== */
@@ -222,8 +265,8 @@ contract DfxCadLogicV1 is DfxCadcState {
     event MintBurnFeeSet(uint256 fee);
     event ERC20Recovered(address user);
     event FeeRecipientSet(address user);
-    event DfxCadTwapSet(address twap);
-    event PokeDown(uint256 dfxRatio, uint256 cadcRatio);
-    event PokeUp(uint256 dfxRatio, uint256 cadcRatio);
+    event DfxEurTwapSet(address twap);
+    event PokeDown(uint256 dfxRatio, uint256 eursRatio);
+    event PokeUp(uint256 dfxRatio, uint256 eursRatio);
     event PokeDeltaSet(uint256 pokeRatioDelta);
 }

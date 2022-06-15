@@ -41,9 +41,12 @@ contract UniswapV2Oracle {
 
         price0CumulativeLast = pair.price0CumulativeLast();
         price1CumulativeLast = pair.price1CumulativeLast();
+        
+        (uint112 reserve0,uint112 reserve1,) = pair.getReserves();
+        
+        price0Average = FixedPoint.fraction(reserve1, reserve0);
+        price1Average = FixedPoint.fraction(reserve0, reserve1);
 
-        uint112 reserve0;
-        uint112 reserve1;
         (reserve0, reserve1, blockTimestampLast) = pair.getReserves();
         require(reserve0 > 0 && reserve1 > 0, "empty-pair");
     }
@@ -54,14 +57,14 @@ contract UniswapV2Oracle {
             uint256 price1Cumulative,
             uint32 blockTimestamp
         ) = UniswapV2OracleLibrary.currentCumulativePrices(address(pair));
-        uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
+        unchecked { 
+            uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
 
-        // ensure that at least one full period has passed since the last update
-        require(timeElapsed >= period, "UNIV2ORACLE: PERIOD_NOT_ELAPSED");
+            // ensure that at least one full period has passed since the last update
+            require(timeElapsed >= period, "UNIV2ORACLE: PERIOD_NOT_ELAPSED");
 
-        // overflow is desired, casting never truncates
-        // cumulative price is in (uq112x112 price * seconds) units so we simply wrap it after division by time elapsed
-        unchecked {
+            // overflow is desired, casting never truncates
+            // cumulative price is in (uq112x112 price * seconds) units so we simply wrap it after division by time elapsed
             price0Average = FixedPoint.uq112x112(
                 uint224((price0Cumulative - price0CumulativeLast) / timeElapsed)
             );

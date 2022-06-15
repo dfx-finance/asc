@@ -12,43 +12,43 @@ import "../../interfaces/IChainLinkOracle.sol";
 import "../../interfaces/IUniswapV2.sol";
 import "../../interfaces/IDfxCurve.sol";
 
-import "../../oracles/DfxCadTWAP.sol";
+import "../../oracles/DfxEurTWAP.sol";
 
-contract DfxCadTWAPTest is DSTest, stdCheats {
-    DfxCadTWAP twap;
+contract DfxEurTWAPTest is DSTest, stdCheats {
+    DfxEurTWAP twap;
 
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
 
     IUniswapV2Router02 sushiRouter = IUniswapV2Router02(Mainnet.SUSHI_ROUTER);
-    IDfxCurve dfxUsdcCadcA =
-        IDfxCurve(0xa6C0CbCaebd93AD3C6c94412EC06aaA37870216d);
+    IDfxCurve dfxUsdEurA =
+        IDfxCurve(0x1a4Ffe0DCbDB4d551cfcA61A5626aFD190731347);
 
     IERC20 dfx = IERC20(Mainnet.DFX);
-    IERC20 cadc = IERC20(Mainnet.CADC);
+    IERC20 eurs = IERC20(Mainnet.EURS);
     IERC20 usdc = IERC20(Mainnet.USDC);
 
     function setUp() public {
-        twap = new DfxCadTWAP(address(this));
+        twap = new DfxEurTWAP(address(this));
         dfx.approve(address(sushiRouter), type(uint256).max);
-        usdc.approve(address(dfxUsdcCadcA), type(uint256).max);
+        usdc.approve(address(dfxUsdEurA), type(uint256).max);
     }
 
-    function test_dfxcadtwap() public {
-        uint256 cadcPerDfx = twap.read();
-        assertGt(cadcPerDfx, 0);
+    function test_dfxeurtwap() public {
+        uint256 eurPerDfx = twap.read();
+        assertGt(eurPerDfx, 0);
 
         cheats.warp(block.timestamp + twap.period() + 1);
         twap.update();
         cheats.warp(block.timestamp + twap.period() + 1);
         twap.update();
 
-        cadcPerDfx = twap.read();
-        assertGt(cadcPerDfx, 0);
+        eurPerDfx = twap.read();
+        assertGt(eurPerDfx, 0);
 
         // Now do a real world comparison
         // 1 DFX -> WETH -> USDC @ sushi
-        // USDC -> CADC @ dfx
-        uint256 _before = cadc.balanceOf(address(this));
+        // USDC -> EURS @ dfx
+        uint256 _before = eurs.balanceOf(address(this));
         address[] memory path = new address[](3);
         path[0] = Mainnet.DFX;
         path[1] = Mainnet.WETH;
@@ -62,20 +62,22 @@ contract DfxCadTWAPTest is DSTest, stdCheats {
             address(this),
             block.timestamp
         );
-        dfxUsdcCadcA.originSwap(
+        dfxUsdEurA.originSwap(
             address(usdc),
-            address(cadc),
+            address(eurs),
             usdc.balanceOf(address(this)),
             0,
             block.timestamp + 1
         );
 
-        uint256 spotCadcPerDfx = cadc.balanceOf(address(this)) - _before;
-        uint256 deltaPercentage = cadcPerDfx > spotCadcPerDfx
-            ? (spotCadcPerDfx * 1e18) / cadcPerDfx
-            : (cadcPerDfx * 1e18) / spotCadcPerDfx;
+        // 1e16 Adjusting for eurs decimal places
+        uint256 spotEurPerDfx = (eurs.balanceOf(address(this)) - _before) * 1e16;
 
-        // Correct up to 98% 
-        assertGt(deltaPercentage, 98e16);
+        uint256 deltaPercentage = eurPerDfx > spotEurPerDfx
+            ? (spotEurPerDfx * 1e18) / eurPerDfx
+            : (eurPerDfx * 1e18) / spotEurPerDfx;
+
+        // Correct up to 96% (less because EURS is 2 decimals) 
+        assertGt(deltaPercentage, 96e16);
     }
 }
