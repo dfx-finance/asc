@@ -79,9 +79,7 @@ const main = async () => {
         deployer: wallet,
         factory: MUNILogicFactory,
         args: [],
-        opts: {
-            maxFeePerGas: 54796832180,
-        }
+        opts: {}
     });
 
     // Deploy ASCUpgradableProxy with the encoded args and initialize MUNI pool
@@ -101,9 +99,7 @@ const main = async () => {
             DFX_GOV_MULTISIG,
             calldata
         ],
-        opts: {
-            gasLimit: 16678090
-        }
+        opts: {}
     });
 
     // Output to file
