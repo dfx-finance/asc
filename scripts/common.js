@@ -105,7 +105,7 @@ const deployContract = async ({
       maxPriorityFeePerGas
     });
     await contract.deployed();
-    spinner.succeed(`Deployed ${name} to ${contract.address}`);
+    spinner.succeed(`Deployed ${name} to ${contract.address} (max. fee per gas: ${formatUnits(maxFeePerGas, 9)}, max. priority fee per gas: ${formatUnits(maxPriorityFeePerGas, 9)})`);
   } catch (e) {
     contract = null;
     spinner.fail(`Failed to deploy: ${e.toString()}`);

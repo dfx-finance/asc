@@ -55,7 +55,7 @@ contract MUNILogicV1 is MUNIState {
 
     // **** Initializing functions ****
 
-    /// @param _owner address of Uniswap V3 pool
+    /// @param _owner address of MUNI owner
     /// @param _pool address of Uniswap V3 pool
     /// @param _managerFeeBPS proportion of fees earned that go to manager treasury
     /// note that the 3 above params are NOT UPDATEABLE AFTER INITIALIZATION
