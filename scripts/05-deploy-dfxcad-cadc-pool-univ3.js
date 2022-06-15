@@ -26,9 +26,6 @@ const UNISWAP_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
 // Access controller
 const DFX_GOV_MULTISIG = "0x27E843260c71443b4CC8cB6bF226C3f77b9695AF";
 
-// Address of contract deployer (your wallet)
-const DEPLOYER = "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1";  // edit this
-
 
 const main = async () => {
     const dfxCadToken = new ethers.Contract(DFXCAD, DfxCadLogicV1Artifact.abi, wallet);
@@ -101,7 +98,7 @@ const main = async () => {
         factory: UpgradableProxyFactory,
         args: [
             muniLogicV1.address,
-            DEPLOYER,
+            wallet.address,
             calldata
         ],
         opts: {
@@ -114,7 +111,7 @@ const main = async () => {
         muniProxy: muniProxy.address,
         calldata: {
             muni: ethers.utils.defaultAbiCoder.encode(["address", "address", "uint", "int", "int"], [
-                DEPLOYER,
+                wallet.address,
                 poolAddress,
                 FeeAmount.LOWEST,
                 lowerTick,
