@@ -61,11 +61,12 @@ const main = async () => {
   // Create the new Uniswap pool
   console.log("Creating UniswapV3 dfxCAD/CADC pool...");
   const feeAmount = FeeAmount.LOWEST;
-  await uniswapV3Factory.createPool(
+  const tx_createPool = await uniswapV3Factory.createPool(
     dfxCadToken.address,
     cadcToken.address,
     feeAmount
   );
+  await tx_createPool.wait();
 
   // Fetch pool's address
   const poolAddress = await uniswapV3Factory.getPool(
@@ -85,10 +86,18 @@ const main = async () => {
 
   // Create sqrtPrice from 1 dfxCAD:1 CADC and initialize pool
   const sqrtRatioX96 = encodeSqrtRatioX96(1, 1);
-  await DfxCadCadcPool.connect(wallet).initialize(sqrtRatioX96.toString());
+  console.log("Initializing sqrtRatioX96...");
+  await DfxCadCadcPool.connect(wallet).initialize(sqrtRatioX96.toString(), {
+    gasLimit: 500_000,
+  });
 
   // Increase TWAP window like in Muni.t.sol tests
-  await DfxCadCadcPool.increaseObservationCardinalityNext(5);
+  console.log("increaseObservationCardinalityNext...");
+  const tx_increaseObservationCardinalityNext =
+    await DfxCadCadcPool.increaseObservationCardinalityNext(5, {
+      gasLimit: 500_000,
+    });
+  await tx_increaseObservationCardinalityNext.wait();
 
   const tickSpacing = await DfxCadCadcPool.tickSpacing();
   const lowerSqrtPriceX96 = encodeSqrtRatioX96(980, 1000);
@@ -105,7 +114,7 @@ const main = async () => {
     factory: MUNILogicFactory,
     args: [],
     opts: {
-      // maxFeePerGas: 54796832180,
+      gasLimit: 5_000_000,
     },
   });
 
@@ -123,7 +132,7 @@ const main = async () => {
     factory: UpgradableProxyFactory,
     args: [muniLogicV1.address, wallet.address, calldata],
     opts: {
-      // gasLimit: 16678090
+      gasLimit: 5_000_000,
     },
   });
 
