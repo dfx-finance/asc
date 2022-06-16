@@ -5,6 +5,7 @@ import { encodeSqrtRatioX96, FeeAmount, TickMath } from "@uniswap/v3-sdk";
 import IUniswapV3Artifact from "@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json";
 import MUNILogicV1Artifact from "../out/MUNILogicV1.sol/MUNILogicV1.json";
 
+// UniV3 dfxCAD/CADC Pool
 const UNISWAP_V3_POOL = "0xFca463b342891CdfDc77180A694582BF1fc6C954";
 
 // MUNI Logic Contract (base, non-proxied)
