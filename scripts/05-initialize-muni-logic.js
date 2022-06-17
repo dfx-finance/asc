@@ -9,7 +9,7 @@ import MUNILogicV1Artifact from "../out/MUNILogicV1.sol/MUNILogicV1.json";
 const UNISWAP_V3_POOL = "0xFca463b342891CdfDc77180A694582BF1fc6C954";
 
 // MUNI Logic Contract (base, non-proxied)
-const MUNI_LOGIC = "0x9715958087842E538e79577d1624D4F736687fdc";
+const MUNI_LOGIC = "0xA2bF8A967a54339D745160b08fe2e9813bD62471";
 
 // Access controller
 const DFX_GOV_MULTISIG = "0x27E843260c71443b4CC8cB6bF226C3f77b9695AF";
