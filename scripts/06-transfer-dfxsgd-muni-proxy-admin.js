@@ -7,7 +7,7 @@ import ASCUpgradableProxyArtifact from '../out/ASCUpgradableProxy.sol/ASCUpgrada
 import chalk from 'chalk';
 
 // MUNI dfxSGD/XSGD Proxy
-const PROXY = "";
+const PROXY = "0x990901696ac0bE0e2276594368dbE26e8AFc1219";
 
 // Access controller
 const DFX_GOV_MULTISIG = "0x27E843260c71443b4CC8cB6bF226C3f77b9695AF";
