@@ -31,7 +31,13 @@ async function main() {
     });
 
     const output = {
-        muniStakingRewards: muniStakingRewards.address
+        muniStakingRewards: muniStakingRewards.address,
+        calldata: {
+            stakingRewards: ethers.utils.defaultAbiCoder.encode(
+              ["address", "address", "address"],
+              [DFX_TREASURY, DFX, MUNI_DFXSGD_XSGD]
+            ),
+          },        
     };
 
     const __filename = fileURLToPath(import.meta.url);
