@@ -6,10 +6,10 @@ import IUniswapV3Artifact from "@uniswap/v3-core/artifacts/contracts/interfaces/
 import MUNILogicV1Artifact from "../out/MUNILogicV1.sol/MUNILogicV1.json";
 
 // UniV3 dfxSGD/XSGD Pool
-const UNISWAP_V3_POOL = "";
+const UNISWAP_V3_POOL = "0xffae7370844307306672Ced610936C149203dfF2";
 
 // MUNI Logic Contract (base, non-proxied)
-const MUNI_LOGIC = "";
+const MUNI_LOGIC = "0xd39A7DE0Fe4869CCB8D03D64b245a04e16342044";
 
 // Access controller
 const DFX_GOV_MULTISIG = "0x27E843260c71443b4CC8cB6bF226C3f77b9695AF";
