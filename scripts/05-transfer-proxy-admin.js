@@ -7,7 +7,7 @@ import ASCUpgradableProxyArtifact from '../out/ASCUpgradableProxy.sol/ASCUpgrada
 import chalk from 'chalk';
 
 // MUNI dfxCAD/CADC Proxy
-const PROXY = "0x566B69225CaD8F2AF3f1Ee890aF569316FFB3e4A";
+const PROXY = "0x60e6E1080C383365C662C299217859967e69733e";
 
 // Access controller
 const DFX_GOV_MULTISIG = "0x27E843260c71443b4CC8cB6bF226C3f77b9695AF";
