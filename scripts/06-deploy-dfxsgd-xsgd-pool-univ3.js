@@ -90,8 +90,8 @@ const main = async () => {
   const token0Decimals1Unit = token0Address === DFXSGD ? 1e18 : 1 * 10 ** XSGD_DECIMALS;
   const token1Decimals1Unit = token0Address === DFXSGD ? 1 * 10 ** XSGD_DECIMALS : 1e18;
 
-  // Create sqrtPrice from 1 dfxSGD:1 XSGD and initialize pool
-  const sqrtRatioX96 = encodeSqrtRatioX96(token0Decimals1Unit, token1Decimals1Unit);
+  // Create sqrtPrice from 1 dfxSGD:1 XSGD and initialize pool -- order is token1, token0
+  const sqrtRatioX96 = encodeSqrtRatioX96(token1Decimals1Unit, token0Decimals1Unit);
   console.log("Initializing sqrtRatioX96...");
   await DfxSgdXsgdPool.connect(wallet).initialize(sqrtRatioX96.toString(), {
     gasLimit: 500_000,
