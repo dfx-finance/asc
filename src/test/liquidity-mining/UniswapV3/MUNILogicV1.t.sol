@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import "ds-test/test.sol";
-import {stdCheats} from "@forge-std/stdlib.sol";
+import "@forge-std/Test.sol";
 
 import "../../../ASCUpgradableProxy.sol";
 
@@ -20,7 +20,7 @@ import "../../../interfaces/IUniswapV3.sol";
 
 import "../../../liquidity-mining/UniswapV3/MUNILogicV1.sol";
 
-contract MUNILogicV1Test is DSTest, stdCheats {
+contract MUNILogicV1Test is DSTest, Test {
     using FixedPoint for FixedPoint.uq112x112;
     using FixedPoint for FixedPoint.uq144x112;
 

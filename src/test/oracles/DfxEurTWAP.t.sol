@@ -5,7 +5,7 @@ import "ds-test/test.sol";
 import "../lib/Address.sol";
 import "../lib/CheatCodes.sol";
 
-import {stdCheats} from "@forge-std/stdlib.sol";
+import "@forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../../interfaces/IChainLinkOracle.sol";
@@ -14,7 +14,7 @@ import "../../interfaces/IDfxCurve.sol";
 
 import "../../oracles/DfxEurTWAP.sol";
 
-contract DfxEurTWAPTest is DSTest, stdCheats {
+contract DfxEurTWAPTest is DSTest, Test {
     DfxEurTWAP twap;
 
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);

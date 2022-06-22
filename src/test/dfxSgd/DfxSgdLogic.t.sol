@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import "ds-test/test.sol";
-import {stdCheats} from "@forge-std/stdlib.sol";
+import "@forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../lib/MockToken.sol";
@@ -17,7 +17,7 @@ import "../../ASCUpgradableProxy.sol";
 
 import "../../interfaces/IDfxCurve.sol";
 
-contract DfxSgdLogicTest is DSTest, stdCheats {
+contract DfxSgdLogicTest is DSTest, Test {
     // Did it this way to obtain interface
     DfxSgdLogic dfxSgd;
 
